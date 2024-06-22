@@ -8,8 +8,8 @@
 
 $$
 \begin{aligned}
-    &\textbf{Model: GUMP-2} \\ 
-    &\rule{90pt}{0.5pt} \\ \quad \\
+    &\underline{\textbf{Model: GUMP-2} }
+    \\ \quad \\
     X(t) &= c_1(t) Y_1(t) + c_2(t) Y_2(t) 
     \\ \quad \\
     S_X(t,f) &= |c_1(t)|^2 S_{Y_1}(f) + |c_2(t)^2| S_{Y_2}(f) \\
