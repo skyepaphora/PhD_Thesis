@@ -9,13 +9,13 @@
 $$
 \begin{aligned}
     &\textbf{Model: GUMP-2} \\ 
-    &\rule{100pt}{0.5pt} \\ \; \\
+    &\rule{85pt}{0.5pt} \\ \text{ } \\
     X(t) &= c_1(t) Y_1(t) + c_2(t) Y_2(t) 
-    \\ \; \\
+    \\ \text{ } \\
     S_X(t,f) &= |c_1(t)|^2 S_{Y_1}(f) + |c_2(t)^2| S_{Y_2}(f) \\
-    & \;\quad {\scriptsize \Big[+ 2c_1(t)c_2(t)S_{Y_1,Y_2}(f) \;\;\; \text{(if }Y_i\text{ correlate)}\Big]}
+    & \text{ }\quad {\scriptsize \Big[+ 2c_1(t)c_2(t)S_{Y_1,Y_2}(f) \text{ }\text{ (if }Y_i\text{ correlate)}\Big]}
     \\
-    &= S_{X_1}(t,f) + S_{X_2}(t,f) \\ \;
+    &= S_{X_1}(t,f) + S_{X_2}(t,f) \\ 
 \end{aligned}
 $$
 
