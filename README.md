@@ -4,79 +4,109 @@
 
 ## Pre-June
 
-### GUMPs
+### GUMP-2s
 
-**GUMPs: we have 2 $g$ vecs, 2 $S_Y$ vecs.**\
-**Partition $S_X$ into 2 vertical matrices. rowsum first, get N length vec.**\
-**This estimates a linear combo of the g's. Do for second matrix.**
+$$
+\textbf{Model: GUMP-2} \\ 
+\rule{100pt}{0.5pt} \\[10pt]
+\begin{aligned}
+    X(t) &= c_1(t) Y_1(t) + c_2(t) Y_2(t) 
+    \\ \; \\
+    S_X(t,f) &= |c_1(t)|^2 S_{Y_1}(f) + |c_2(t)^2| S_{Y_2}(f) \\
+    & \;\quad {\scriptsize \Big[+ 2c_1(t)c_2(t)S_{Y_1,Y_2}(f) \;\;\; \text{(if }Y_i\text{ correlate)}\Big]}
+    \\[5pt]
+    &= S_{X_1}(t,f) + S_{X_2}(t,f)
+\end{aligned}\\
+$$
 
-* BSS: above written: 2vecs = 2x2 mixing * unknown modulating funcs
-    - so the mod funcs are like indepsource vecs
-    - the rowsums are observed time series
-* in BSS... need to observe at least as many series as there are sources
-    - is this true? It might be too hard though
-* you could make Nf partitions but that wouldn't be smoothing. The number of partitions is essentially a smoothing parameter. 
-    - Maybe k partitions for gump-k is good then
-* techniques for bSS might apply to gumps!
-* note that a system of equations doesn't use evolutionary spectral estimates or anything, but bss does
-    - but it's not like BSS in that the g's are deterministic, not rvs
-    - each obs series is a partial rowsum from tfs x. that means computing evolutionary cross spectrum.
+**What are the least squares estimates of $g$ and $S_Y$? Compute the $N\times N_f$ TFS $S_X$**
 
-**what is least squares est of g and SY? compute NxNf TFS (S_x);**\
-**what is the matrix of the form gSY (ump format) which is closest to S_x in frobenius norm?**\
-**(componentwise sum of squares, or least squares estimate)**
+* what matrix of the form $gS_Y$ (UMP form) is closest to $S_X$ in frobenius norm? (componentwise sum of squares, least squares estimate)
+* For UMP, we get these from the left/right eigenvectors Azadeh derives using SVD: $\hat g_1$ and $\hat S_{Y,1}$
+* **SKYE:** do this for GUMP $-$ again, this will probably be singular vectors from the SVD of $\hat S_X$
 
-* For ump, it's the left/right eigenvectors Azadeh
-* skye skye skye, do this for GUMP
-* probably again singular vectors of SVD of TFS
+**Extending UMP decomposition to GUMP-2 decomposition**
 
-**Say we want to estimate g(t_0)**\
-**localize estimation of the vector g (UMP-only version)**
+* Number of unknowns: $(2N+2M)$
+* Partition $\hat S_X$ into first and last $N_f/2$ columns (2 block matrices) $\to 2N$ equations
+* Do the same for the rows $\to 2N_f$ equations
 
-1. say we do the UMP method - simple rowsums. this is your initial est of g. Do the same for S_Y
-2. consider what happens at t_0 across all frequencies. is it low? high? Do we expect a better estimate at certain freqs? We can choose a subset of frequencies whose estimates are more stable.
-3. so this is a 2 stage est procedure. Hit with default smoothing, then try to improve. The initial smoothing pulls out g and y, which were unavailable from the S_X
+*you could make $N_f$ partitions but that wouldn't be smoothing. The number of partitions is essentially a smoothing parameter. Maybe $k$ partitions for GUMP-$k$ is good, then.*
 
-**Go to the GUMPs and work out these explicit equations.**
+> **Simulation Homework:** Generate GUMP-2s and try to estimate g's
 
-* non-linear system of eqs --> num method
-* solve it as an iterative process: 
-    - solve SY's first. Then you can set up a linear sys of eqs.
-    - solve using Qr decomp
-    - put these back into original
-    - now you have ests of g
-    - use to get better sums of S
-    - go in a circle (iterative)
+**Say we want to estimate $g(t_0):$**\
+**localizing estimation of the vector $g$** *(UMP-only version)*
 
-* uniformly modulated sources --> GUMP response (observed)
-* 2-Gump: i,jth entry = time i, freq j
+> *Go to the GUMPs and work out these explicit equations.*
 
-**GUmp-2 model: $\alpha_1 c_1 Y_1$ + $\alpha_2 c_2 Y_2$**
+1. Say we do the UMP method: simple rowsums. This is our initial estimate of $g$. 
+2. Do the same for S_Y
+3. Consider what happens at t_0 across all frequencies. 
+    - is it low? high? 
+    - Do we expect a better estimate at certain freqs? 
+    - We can choose a subset of frequencies whose estimates are more stable.
 
-* EPS(t,f) = a^2 g S_Y^2 and so forth
-* $2N+2M+2$ unknowns (can work these out in your head). ACTUALLY, (2N+2M) since alphas a wlog
-* partition into 1st and last M/2 columns (2 block matrices) -> 2N equations
-* Do the same for the rows -> 2M eqs
+So this is a 2 stage estimation procedure. Hit $\hat S_X$ with default smoothing, then try to improve. The initial smoothing pulls out g and y, which were unavailable from the $S_X$ to begin with.
 
-**Simulation Homework**
+**Non-linear systems of equations $\to$ numerical methods:** solve it as an iterative process. 
 
-* assume alphas are known (custom parameters) then generate GUMP-2s and try to estimate g's
-* actually the alphas are without loss of generality since they're just factors. that's the same purpose as g
+> *Go to the GUMPs and work out these explicit equations.*
+
+1. Solve for $S_Y$'s first. Then we can set up a linear system of equations.
+2. Solve system using QR decomposition (?)
+3. Put these back into original
+4. Now you have estimates of g
+5. I think now you smooth it with the new estimates, getting you better estimates of S
+6. Iterate (until when?)
+    
+    
+
+---
+
+### BSS
+
+**GUMPs: we have 2 $g$ vectors, and 2 $S_Y$ vectors.**
+
+* Partition $S_X$ into 2 vertical block matrices. rowsum first, get N length vec.
+* This estimates a linear combo of the g's. Do for second matrix.
+
+$$
+\begin{aligned}
+     X(t) &=     \\
+     &=
+\end{aligned}
+$$
+
+* 2 vectors = 2x2 mixing matrix times unknown modulating functions
+* The modulating functions are like independent source vectors.
+* The rowsums [of the output? surely.] are observed time series
+* Uniformly modulated sources $\to$ GUMP response (observed)
+
+**Differences between BSS and GUMP decomposition**
+
+* Our proposed system of equations (for GUMPs) don't use evolutionary spectral estimates or anything, but BSS does.
+* For GUMP decomp, the $g$'s are deterministic. For BSS, they're treated as random variable.
+* In BSS: each observed series is a partial rowsum from the TFS of $X$. That means we'll have to compute the evolutionary cross spectrum.
+
+**Question: in BSS: do we need to observe at least as many series as there are sources?**
+
+---
 
 **BSS version: $S_1$ and $S_2$ are (assuming uncorrelated) like the sources.**
-
 * g_1 and g_2 could also be considered sources tho if you flip it
-* (N choose 2) different comos of rows. This would give (N choose 2) estimates of the S_Y's, and we can take some function (average)
+* (N choose 2) different combos of rows. This would give (N choose 2) estimates of the S_Y's, and we can take some function (average)
 * EPS of the sources should have zeroes on the off diagonal since they're uncorrelated.
 * So RHS of model is diagonal, want to diagonalize LHS. diagonal matrices are proportional to each other. Do this at each time, that's the algorithm really
-* **CODING HOMEWORK:** code bss.
+
+> **CODING HOMEWORK:** code bss.
+>
     - that means creating STFD matrices.
     - Consider using packages. really.
     - Search BSS in R: JADE, BSS asymp
     - glen wants to know if these will work to estimate $g/S$
     
 **BSS: p time series, N obs.**
-
 * mixing matrix p x p; ith diagonal entry is EPS of ith time series at (t,f)
 * compute evol spec: each (t,f) has a cross spectrum of the x_i's
 * off diagonal entries: sum over the evol eigenspectra: ith time series and jth time series: dot product is estimate of evol cross spec
@@ -85,18 +115,51 @@
 
 ## June
 
-* add signals to gump or UMP to try to pick up
+**Some current tasks suggested in meetings**
+
+* add signals to GUMP or UMP to try to them pick up
     - even try AR(2) stationary to compare to MTM
 * think about distributional properties of estimators (smooth)
 * consider the last few windows for extrapolation
-* combine different Bs in various ways
+* combine different blockwidths $B$ in various ways
 
 **Decomposition Limitations**
 
-* Any method can only work up to proportionality. The model x = cY. It doesn't identify g and S the way A = bc doesn't identify
-* does give us estimate of total power.
-* We can adjust - normalize so that power is average power.
-* Idea is to get it to c = 1 I guess
+* Any method can only work up to proportionality. The model $x = cY$ doesn't identify $g$ and $S$ the way $A = bc$ doesn't identify $b$ or $c$.
+* Decomposition does give us an estimate of total power.
+* We can adjust: normalize power such that it's equal to the average power.
+* The idea is to get it to c = 1 I guess
+
+---
+
+## Task breakdown
+
+TASK 0: resurrect the code files, debug and clean up for ease of use.
+
+### GUMP-2
+1. Singular value decomposition of GUMP-2 $S_X$. 
+2. Generalize our decomposition method to GUMP-2:
+    - see previous notes for guidance
+    - explore the iterative techniques previously outlined (numerical methods)
+3. Formally think through window details: blockwidths and tweaks to extrapolation.
+
+**Code:** 
+
+* Check if our smoothing procedure affects our ability to pick up signals.
+    - to start: try this for a stationary AR(2) and compare to MTM, Harmonic F, etc. 
+* Update *The Function* to cover GUMP-2s and additional signals.
+* Generate GUMP-2s
+* Generate GUMP-2s with added signal(s).
+* Code our partitioning and iterative procedures, try to estimate $g$ and $S_Y$ terms.
+* Try normalizing the total power so that it reflects the average power of $S_X$ (see notes)
+
+
+### BSS
+First, go through BSS section of readme to clarify meeting notes and goals
+
+1. Review BSS framework
+2. Familiarize myself with how this framework relates to (G)UMPs.
+3. Find a way to code the algorithm in R, ideally using established packages
 
 
 
@@ -111,10 +174,4 @@
 
 
 
-
-
-
-
-
-### June 20
 
