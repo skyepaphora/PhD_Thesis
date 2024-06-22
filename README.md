@@ -7,16 +7,16 @@
 ### GUMP-2s
 
 $$
-\textbf{Model: GUMP-2} \\ 
-\rule{100pt}{0.5pt} \\[10pt]
 \begin{aligned}
+    &\textbf{Model: GUMP-2} \\ 
+    &\rule{100pt}{0.5pt} \\ \; \\
     X(t) &= c_1(t) Y_1(t) + c_2(t) Y_2(t) 
     \\ \; \\
     S_X(t,f) &= |c_1(t)|^2 S_{Y_1}(f) + |c_2(t)^2| S_{Y_2}(f) \\
     & \;\quad {\scriptsize \Big[+ 2c_1(t)c_2(t)S_{Y_1,Y_2}(f) \;\;\; \text{(if }Y_i\text{ correlate)}\Big]}
-    \\[5pt]
-    &= S_{X_1}(t,f) + S_{X_2}(t,f)
-\end{aligned}\\
+    \\
+    &= S_{X_1}(t,f) + S_{X_2}(t,f) \\ \;
+\end{aligned}
 $$
 
 **What are the least squares estimates of $g$ and $S_Y$? Compute the $N\times N_f$ TFS $S_X$**
