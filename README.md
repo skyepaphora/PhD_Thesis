@@ -4,8 +4,10 @@
 
 ## Pre-June
 
-**GUMPs: 2 g vecs, 2 S vecs.**\
-**partition into 2 vertical matrices. rowsum first, get N length vec.**\
+### GUMPs
+
+**GUMPs: we have 2 $g$ vecs, 2 $S_Y$ vecs.**\
+**Partition $S_X$ into 2 vertical matrices. rowsum first, get N length vec.**\
 **This estimates a linear combo of the g's. Do for second matrix.**
 
 * BSS: above written: 2vecs = 2x2 mixing * unknown modulating funcs
