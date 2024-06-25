@@ -137,6 +137,10 @@ $$
 * **CODING:** can I recreate figures 3 and 4? These suggest the estimators are incredibly accurate under simulated conditions, even with noise
 * Note that figures uhh 5 and 6 I think? are all messed up. She seems to have added the original source 1 signal to sources 2 and 3, only in the plots (part a)
 * reproducing Spatial TFS: take HRS for each time series, get those A hats: rather than squared mag, take $\hat A_x \hat A_y^*$ in eq 11 of Senay
+* IDEA: time-varying mixing matrices
+    - how can you tell if the source is changing or the mixing is matrix?
+    - actually, this might be superfluous. Because any changes in mixing could be attributed to changes in the series themselves, since they're nonstat
+    - BUT: what if instead of JD-criterion, what if we just had a tim/freq dependent mix? Or C matrix in senay?
 
 ---
 
