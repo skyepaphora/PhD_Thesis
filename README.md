@@ -136,12 +136,16 @@ $$
 
 TASK 0: resurrect the code files, debug and clean up for ease of use.
 
+Glen recommends thinking about BSS WHILE I'm working on GUMPs
+
 ### GUMP-2
-1. Singular value decomposition of GUMP-2 $S_X$. 
-2. Generalize our decomposition method to GUMP-2:
+1. Singular value decomposition of GUMP-2 $S_X$.
+    - check if this is actually the least squares (even for UMPs, Glen did this informally)
+    - would this be the first two L/R eigenvectors? Glen has no reason to believe this. In fact, there would have to be orthogonality between the g's. This is in favour of our method
+3. Generalize our decomposition method to GUMP-2:
     - see previous notes for guidance
     - explore the iterative techniques previously outlined (numerical methods)
-3. Formally think through window details: blockwidths and tweaks to extrapolation.
+4. Formally think through window details: blockwidths and tweaks to extrapolation.
 
 **Code:** 
 
