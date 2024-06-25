@@ -130,6 +130,13 @@ $$
 * We can adjust: normalize power such that it's equal to the average power.
 * The idea is to get it to c = 1 I guess
 
+#### June 25: BSS
+* went over BSS framework from Senay
+* Consider reviewing Kayhan EP paper
+* We got a bit tangled up: what kind of object is the cross spectral power? A vector? Matrix? Before section 3.
+* **CODING:** can I recreate figures 3 and 4? These suggest the estimators are incredibly accurate under simulated conditions, even with noise
+* Note that figures uhh 5 and 6 I think? are all messed up. She seems to have added the original source 1 signal to sources 2 and 3, only in the plots (part a)
+
 ---
 
 ## Task breakdown
