@@ -136,6 +136,7 @@ $$
 * We got a bit tangled up: what kind of object is the cross spectral power? A vector? Matrix? Before section 3.
 * **CODING:** can I recreate figures 3 and 4? These suggest the estimators are incredibly accurate under simulated conditions, even with noise
 * Note that figures uhh 5 and 6 I think? are all messed up. She seems to have added the original source 1 signal to sources 2 and 3, only in the plots (part a)
+* reproducing Spatial TFS: take HRS for each time series, get those A hats: rather than squared mag, take $\hat A_x \hat A_y^*$ in eq 11 of Senay
 
 ---
 
