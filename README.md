@@ -1,6 +1,15 @@
-# Research Meeting Notes
+## Task completion
+
+#### June 27
+
+* Got rid of unnecessary transpositions, this took quite a bit of algebra
+* code is now 2.25 times faster according to profile... I still don't trust battery saver
+* plots look good, seem basically identical to the old function's output when I set a seed
+* code now compatible with GUMP-2s!! :)
 
 ---
+
+# Research Meeting Notes
 
 ## Pre-June
 
@@ -146,7 +155,7 @@ $$
 
 ## Task breakdown
 
-TASK 0: resurrect the code files, debug and clean up for ease of use.
+~TASK 0: resurrect the code files, debug and clean up for ease of use.~
 
 Glen recommends thinking about BSS WHILE I'm working on GUMPs
 
@@ -163,7 +172,7 @@ Glen recommends thinking about BSS WHILE I'm working on GUMPs
 
 * Check if our smoothing procedure affects our ability to pick up signals.
     - to start: try this for a stationary AR(2) and compare to MTM, Harmonic F, etc. 
-* Update *The Function* to cover GUMP-2s and additional signals.
+* ~Update *The Function* to cover GUMP-2s and additional signals.~
 * Generate GUMP-2s
 * Generate GUMP-2s with added signal(s).
 * Code our partitioning and iterative procedures, try to estimate $g$ and $S_Y$ terms.
@@ -177,6 +186,7 @@ First, go through BSS section of readme to clarify meeting notes and goals
 2. Familiarize myself with how this framework relates to (G)UMPs.
 3. Find a way to code the algorithm in R, ideally using established packages
 
+---
 
 
 

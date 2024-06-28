@@ -1,0 +1,323 @@
+## Prelims
+
+```{r packages}
+## --- Packages 
+library(multitaper)   # spec.mtm, etc.
+library(pbapply)      # Progress bar for apply() functions
+library(kableExtra)   # Nice Tables
+library(itsmr)        # Time series stuff, used here for ARMA
+library(animation)    # For creating gifs
+library(fields)       # Supplement image plots: legends, better colour schema
+```
+
+```{r prelims, echo = TRUE}
+## --- Initial values -------- ##
+M  <- 100                                        # No. of simulations
+N  <- 1000                                       # No. of obs
+NF <- 2^ceiling(log(N,2)) + 1                    # No. of Fourier freqs
+FF <- 1/(2*NF)                                   # Fundamental Fourier freq
+Fs <- FF*(0:(NF-1))                              # Fourier freq mesh
+t  <- 1:N                                        # Time vector
+w  <- 4/N                                        # Analysis bandwidth (freq)
+i  <- complex(1,0,1)                             # imaginary i
+K  <- 7                                          # Eigencoefs per frequency
+v  <- spec.mtm(ts(1:N), plot = FALSE)$mtm$dpss$v # DPSS (series length N)
+
+## --- Modulating function
+ct1  <- exp((-(t-450)^2)/(2*(200^2)))            # default
+ct2  <- sqrt(1 + t/200)                          # alternate
+ct3  <- 1 - ct1                                  # reversed
+ct <- ct3 ; cc <- "c3"                           # choose your modulator!
+gt <- ct^2                                       # squared modulating function
+
+## --- Parameters for Azadeh's Example 4:
+#      AR(2) non-stationary series
+psi.1 <- 0.2                            
+psi.2 <- t(t(0.1*sin(2*pi*(0.001)*t)))
+a.12  <- t(t(psi.1*(1 - psi.2)))
+
+## --- Function: true spectral density of an AR(2) series (sd = 10 is fixed)
+ar2 = c(0.5,-0.5)
+ar2.2 = c(0.7,-0.3)
+AR2.spec <- function(phi = c(0,0)){ (10^2)/Mod( 1 - phi[1]*exp(-i*2*pi*Fs) - phi[2]*(exp(-i*4*pi*Fs)))^2 }
+```
+
+## prep functions
+
+```{r model}
+## --------- Choose Model --------- ##
+my.type = "GUMP"
+sd = 10
+
+if(my.type == "noise"){
+    get <- function(){ 
+        return(rnorm(N, sd = sd)) #+ sig
+    }
+  } else if(my.type == "AR2_stationary"){
+    get <- function(){ 
+        return(arima.sim(model = list(ar = ar2, sd = sd), n = N)) 
+    }
+  } else if(my.type == "UMP"){
+    get <- function(){
+        yt <- arima.sim(model = list(ar = ar2, sd = sd), n = N)  
+        return(ct*yt)
+    }
+  } else if(my.type == "GUMP"){
+    get <- function(){
+        yt1 <- arima.sim(model = list(ar = ar2  , sd = sd), n = N)
+        yt2 <- arima.sim(model = list(ar = ar2.2, sd = sd), n = N)
+        return(ct*yt1 + ct2*yt2)
+    }
+  } else if(my.type == "AR2_non"){
+    get <- function(){
+        z <- rnorm(N+2,0,sd)
+        x <- z[3:(N+2)] + a.12*z[2:(N+1)] + psi.2*z[1:N]
+    }
+} else {error}
+
+```
+
+## p-BC Function
+
+```{r}
+p.bc <- function(p = 1:2, type = "noise", B = 100, M = 100, seed = 0, sd = 10,
+                ct = rep(1,N),      ct2 = rep(1,N), 
+               ar2 = c(0.5,-0.5), ar2.2 = c(0.7,-0.3),
+              freq = NULL){
+  
+        
+        # B-dependent Prelims
+        B2 <- ceiling(B/2)                                  # Midpoint shift
+        b  <- 1:(N-(B-1))                                   # block indices
+        tb <- b + B2 - 1                                    # time in-block
+        vb <- t(spec.mtm(ts(1:B), plot = FALSE)$mtm$dpss$v) # DPSS (based on B)
+        BS <- list(B = B, B2 = B2, b = b, tb = tb, vb = vb) # store for output
+        
+        
+        ## --------- Choose Signals --------- ##
+        if(!is.null(freq)){
+          
+            # Initialize    
+            ind <- 1
+            st  <- list()
+              
+            # st matrix: each column is a signal, rowsums = chord
+            for(f in freq){ st[[ind]] = cos(2*pi*Fs[f]*t); ind <- ind + 1 }
+            sig <- rowSums(matrix(unlist(st), nrow = N))
+        
+        } else { st <- NULL; sig <- 0 }
+        
+        
+  # N x inner sum coef                    /----w_B----\
+  Ma  <- function(t,m){return(B*(sin(2*pi *(K+1)/(2*B)* (t-m))/(pi*(t-m)))^2)}
+        
+  # Matrix of Interest
+  mat <- matrix(0,nrow = B, ncol = B)
+  for(s in 1:B){mat[s,] <- Ma(s,1:B)}
+        
+  # Fill diagonal with Sinc function at "0/0"
+  diag(mat) <- 1 
+      
+  # Get eigenstuff
+  mval <- eigen(mat)$values
+  mvec <- eigen(mat)$vectors
+
+  # Function to estimate coefficients {a(l,b)}
+  a  <- function(s,l,b){ (K/(B*(mval[l+1]))) * (matrix(s[,b], nrow = NF) %*% mvec[,l+1]) }
+              
+  # omega function vals for upcoming Taylor expansions (before loop for speed)
+  w0.0 <- sum(mvec[,1])
+  w2.0 <- sum(mvec[,3])
+  w1.1 <- c(((-B2):(B2 - 1 - (B/2 != B2)))   %*% mvec[,2])
+  w0.2 <- c(((-B2):(B2 - 1 - (B/2 != B2)))^2 %*% mvec[,1])
+  w2.2 <- c(((-B2):(B2 - 1 - (B/2 != B2)))^2 %*% mvec[,3])
+  d.02 <- (w2.0*w0.2 - w0.0*w2.2)
+
+  # Functions for first and second time-derivatives
+  tds  <- function(s,p){ B*a(s,1,p)/w1.1 }
+  stds <- function(s,p){ 2*B * (a(s,0,p)*w2.0 - a(s,2,p)*w0.0) / d.02}
+  
+  
+      # Loop setup
+      if(seed > 0){ set.seed(seed) }
+      pb <- txtProgressBar(style = 3)
+      
+      # Initialize arrays
+      bc1 <- if(any(p==1)) {array(dim = c(NF,N,M))} else { NULL }
+      bc2 <- if(any(p==2)) {array(dim = c(NF,N,M))} else { NULL }
+  
+  
+  
+  ## -------------------- SIMULATE: loop begins HERE -------------------- ##
+  for(m in 1:M){
+
+    xt <- get()
+    
+    # Sliding window: full window included
+    sw <- (B/K) * Mod( sapply(b, function(bb){
+          (spec.mtm(ts(xt[(bb):(bb+B-1)]),
+                    nFFT = (2*NF-1),
+                    plot = FALSE,
+                    returnInternals = TRUE)$mtm$eigenCoefs) %*% vb }))^2 
+    
+    # Endpoints: 1st derivative
+    tds.start  <- tds(sw,1)
+    tds.end    <- tds(sw,max(b)) 
+    
+    # Endpoints: 2nd derivative
+    stds.start <- stds(sw,1)      
+    stds.end   <- stds(sw,max(b))
+    
+    # Heavy lifting done 
+    gc(); setTxtProgressBar(pb, (m-0.5)/M)
+    
+    
+    # --------- 1-BC --------- #
+    if(any(p==1)){
+      
+      # Modify (linear) storing midpoints
+      bc1[,tb,m] <- (K/(mval[1]*w0.0)) * sapply(b, function(p){matrix(sw[,p], nrow = NF) %*% mvec[,1]})
+      
+      # Extrapolate
+      bc1[,1:(tb[1]-1),m]   <- sapply((tb[1]-1):1, 
+                                        function(h){ bc1[,tb[1],m] - h*tds.start })
+      bc1[,(max(tb)+1):N,m] <- sapply(1:(B2-(B2 != B/2)), 
+                                        function(h){ bc1[,max(tb),m] + h*tds.end })
+    }
+    
+    
+    # --------- 2-BC --------- #
+    if(any(p==2)){
+      
+      # Modify (quadratic) storing midpoints
+      bc2[,tb,m] <- (B/d.02) * sapply(b, function(p){ (a(sw,2,p)*w0.2 - a(sw,0,p)*w2.2) })
+      
+      # Extrapolate
+      bc2[,1:(tb[1]-1),m]   <- sapply((tb[1]-1):1, 
+                                        function(h){ bc2[,tb[1],m] - h*tds.start - (h^2)*stds.start/2 })
+      bc2[,(max(tb)+1):N,m] <- sapply(1:(B2-(B2 != B/2)), 
+                                        function(h){ bc2[,max(tb),m] + h*tds.end + (h^2)*stds.end/2 })
+    }
+    
+    # Clean!
+    rm(sw); gc()
+  
+    # Phew!
+    setTxtProgressBar(pb, m/M); gc()
+  } ## --------------------------- loop ends --------------------------- ##
+    
+  
+  
+  # TRUE values
+  yf.true  <- if(type != "noise"){AR2.spec(ar2)  } else {NULL}
+  ytf.true <- if(type != "noise"){outer(rep(1,N), yf.true )} else {NULL}
+  
+  yf2.true  <- if(type == "GUMP"){AR2.spec(ar2.2)} else {NULL}
+  ytf2.true <- if(type == "GUMP"){outer(rep(1,N), yf2.true)} else {NULL}
+  
+  xtf.true  <- if(type == "AR2"    ){ ytf.true
+        } else if(type == "UMP"    ){ outer(ct^2,  yf.true)
+        } else if(type == "GUMP"   ){ outer(yf.true, ct1^2) + outer(yf2.true, ct2^2)
+        } else if(type == "AR2_non"){
+            1e2/(Mod(1 - (a.12)%*%exp(-i*2*pi*Fs) - psi.2%*%exp(-i*2*pi*Fs*2))^2)
+        }
+  xtf2.true <- if(type == "GUMP"){outer(ct2^2, yf2.true)} else {NULL}
+  
+  # Save true vals
+  tru <- list( yf.true, ytf.true, yf2.true, ytf2.true, xtf.true, xtf2.true)
+  names(tru) <- c("yf",    "ytf",    "yf2",    "ytf2",    "xtf",    "xtf2")
+  
+  # output
+  return(list(bc1 = bc1,
+              bc2 = bc2,
+              tru = tru, 
+           B.vars = BS, 
+             sigs = st))
+}
+```
+
+## Simulate
+
+```{r}
+# trial <- p.bc(p = 1:2, type = my.type, M = M, B = B, seed = 68, ct = ct); gc()
+trial <- p.bc(p = 1:2, type = my.type, M = 10, B = 50, seed = 68, ct = ct); gc()
+```
+
+```{r}
+## --- Stats --------- ##
+pbc <- list(bc1 = list(), bc2 = list())
+info <- list(tru = trial$tru, B.vars = trial$B.vars, sigs = trial$sigs) 
+
+pbc$bc1$mean <- pbapply(trial$bc1, 1:2, mean); gc()
+pbc$bc1$se   <- pbapply(trial$bc1, 1:2, sd)/sqrt(M); gc()
+
+pbc$bc2$mean <- pbapply(trial$bc2, 1:2, mean); gc()
+pbc$bc2$se   <- pbapply(trial$bc2, 1:2, sd)/sqrt(M); gc()
+```
+
+```{r save0}
+## --- Save! --------- ##
+save.image(paste0("Data/",my.type,
+                  if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                  "_B",B,"___full_NEW.RData"))
+
+rm(trial); gc() # discard individual simulations, keep stats
+
+save.image(paste0("Data/",my.type,
+                  if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                  "_B",B,"___mini_NEW.RData"))
+```
+
+## Plot
+
+```{r}
+image.plot(info$tru$xtf, main = "tru")
+image.plot(pbc$bc1$mean, main = "new")
+image.plot(pbc$bc2$mean, main = "new")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
