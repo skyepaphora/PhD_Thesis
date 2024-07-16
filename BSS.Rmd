@@ -1,0 +1,68 @@
+# Cocktail Party Demo
+
+```{r}
+# --- ??JADE --------- #
+library(JADE)
+library(BSSasymp)
+library(tuneR)
+```
+
+**ICA:** 
+
+(IC1) the source components are mutually independent,
+(IC2) $E(z) = 0$ and $E(z^Tz) = I_p$,
+(IC3) at most one of the components is gaussian, and
+(IC4) each source component is independent and identically distributed
+
+
+```{r}
+# --- Get source signals --------- #
+S1 <- readWave(system.file("datafiles/source5.wav", package = "JADE"))
+S2 <- readWave(system.file("datafiles/source7.wav", package = "JADE"))
+S3 <- readWave(system.file("datafiles/source9.wav", package = "JADE"))
+```
+
+1. introduce noise component to the data
+2. scale the components to have unit variances
+3. generate components of a mixing matrix from a standard normal distribution [except no? It says runif?]
+4. mix the sources with mixing matrix
+
+```{r}
+set.seed(321)
+
+NOISE <- noise("white", duration = 50000)
+
+S <- cbind(S1@left, S2@left, S3@left, NOISE@left)
+S <- scale(S, center = FALSE, scale = apply(S, 2, sd))
+S.t <- ts(S, start = 0, frequency = 8000)
+
+p <- 4
+A <- matrix(runif(p^2, 0, 1), p, p)
+
+X <- tcrossprod(S.t, A)
+X.t <- as.ts(X)
+```
+
+```{r}
+plot(S.t, main = "Sources")
+plot(X.t, main = "Mixtures")
+```
+
+```{r}
+x1 <- normalize(Wave(left = X[, 1], samp.rate = 8000, bit = 8), unit = "8")
+x2 <- normalize(Wave(left = X[, 2], samp.rate = 8000, bit = 8), unit = "8")
+x3 <- normalize(Wave(left = X[, 3], samp.rate = 8000, bit = 8), unit = "8")
+x4 <- normalize(Wave(left = X[, 4], samp.rate = 8000, bit = 8), unit = "8")
+```
+
+```{r}
+R> play(x1)
+R> play(x2)
+R> play(x3)
+R> play(x4)
+```
+
+
+
+
+

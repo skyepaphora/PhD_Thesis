@@ -1,11 +1,16 @@
 ## Task completion
 
-#### June 27
+#### June
 
 * Got rid of unnecessary transpositions, this took quite a bit of algebra
 * code is now 2.25 times faster according to profile... I still don't trust battery saver
 * plots look good, seem basically identical to the old function's output when I set a seed
 * code now compatible with GUMP-2s!! :)
+
+#### July
+
+* installed BSS packages, read through documentation
+* creating cocktail party example
 
 ---
 
@@ -139,7 +144,7 @@ $$
 * We can adjust: normalize power such that it's equal to the average power.
 * The idea is to get it to c = 1 I guess
 
-#### June 25: BSS
+#### BSS
 * went over BSS framework from Senay
 * Consider reviewing Kayhan EP paper
 * We got a bit tangled up: what kind of object is the cross spectral power? A vector? Matrix? Before section 3. I think in eq 30 we realize they're time-dependent, freq-dependent diagonal matrices :)
@@ -188,6 +193,7 @@ First, go through BSS section of readme to clarify meeting notes and goals
 
 ---
 
+## July
 
 
 
