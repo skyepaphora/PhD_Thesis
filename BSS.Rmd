@@ -56,10 +56,10 @@ x4 <- normalize(Wave(left = X[, 4], samp.rate = 8000, bit = 8), unit = "8")
 ```
 
 ```{r}
-R> play(x1)
-R> play(x2)
-R> play(x3)
-R> play(x4)
+play(x1)
+play(x2)
+play(x3)
+play(x4)
 ```
 
 
