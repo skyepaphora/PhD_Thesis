@@ -1,0 +1,475 @@
+---
+output: html_document
+---
+
+
+## Prelims
+
+```{r packages, warning=FALSE, message=FALSE}
+## --- Packages 
+library(multitaper)   
+library(pbapply)      # Progress bar for apply() functions
+library(kableExtra)   
+library(itsmr)        # Time series stuff, convenient for ARMA
+library(animation)    # For creating gifs
+library(fields)       # Supplement for image plots: legends, better colour
+
+## --------- TEMPORARY --------- ##
+# load("C:/Users/skyep/Documents/Research/Skyes_Toolbox/splot.RData")
+## --------- --------- --------- ##
+```
+
+```{r}
+# load("Data/AR2_B200___trial.RData")
+# load("Data/UMP_c1_B100___trial.RData")
+# load("Data/UMP_c1_B150___trial.RData")
+# load("Data/UMP_c1_B200___trial.RData")
+# load("Data/UMP_c1_B300___trial.RData")
+# load("Data/UMP_c3_B150___trial.RData")
+# load("Data/UMP_c3_B200___trial.RData")
+load("Data/UMP_c3_B300___trial.RData")
+sheck <- c(my.type, cc, B)
+```
+
+### SVD error prep [source:https://github.com/thibautjombart/adegenet/issues/214]
+```{r svd error}
+# ## Store the svd function, but with LINPACK = T as default:
+# svd <- function (x, nu = min(n, p), nv = min(n, p), LINPACK = TRUE)
+# {
+#   print("LINPACK:"); print(LINPACK)  ## added so you can see it's changed
+#   x <- as.matrix(x)
+#   if (any(!is.finite(x)))
+#     stop("infinite or missing values in 'x'")
+#   dx <- dim(x)
+#   n <- dx[1L]
+#   p <- dx[2L]
+#   if (!n || !p)
+#     stop("a dimension is zero")
+#   La.res <- La.svd(x, nu, nv)   ## your problem line
+#   res <- list(d = La.res$d)
+#   if (nu)
+#     res$u <- La.res$u
+#   if (nv) {
+#     if (is.complex(x))
+#       res$v <- Conj(t(La.res$vt))
+#     else res$v <- t(La.res$vt)
+#   }
+#   res
+# }
+# 
+# ## Over-write current svd fn with new version:
+# assignInNamespace("svd", svd, "base")
+```
+
+---
+
+## Sample a single instance
+```{r}
+# Roll the 100-sided die
+samp <- 96  # (or don't)
+
+# Choose realizations
+bc1.samp <- trial$bc1[,,samp]
+bc2.samp <- trial$bc2[,,samp]
+```
+
+# GEST \& YEST Previous Methods: SVD
+
+```{r}
+# --- Create Function for getting Azadeh's g (and sy)
+est.a <- function(sgram, est = "g"){
+  # SVD
+  duv <- svd(sgram,1,1); gc()
+  
+  d <- duv$d
+  u <- duv$u
+  v <- duv$v
+  
+  # Normalize
+  bu <- 1/duv$u[1]
+  bv <- duv$d[1]/bu
+  
+  # Estimate g
+  g <- bu * duv$u
+  
+  # Estimate Sy
+  sy <- bv * duv$v
+  
+  # Return
+  return(if(est == "g"){g} else {sy})
+}
+
+# normalizing function
+normy <- function(x){abs(x/max(abs(x)))}
+```
+
+### GEST: Estimating g(t)
+
+```{r}
+# ALL results
+ag.full.1 <- pbapply(trial$bc1, 3, est.a); gc()
+ag.full.2 <- pbapply(trial$bc2, 3, est.a); gc()
+
+# Normalized Average
+ag.1  <- rowMeans(ag.full.1)
+ag.2  <- rowMeans(ag.full.2)
+```
+
+### YEST: Estimating Sy(f)
+
+```{r}
+# ALL results
+ayf.full.1 <- pbapply(trial$bc1, 3, function(x){est.a(x, est = "sy")}); gc()
+ayf.full.2 <- pbapply(trial$bc2, 3, function(x){est.a(x, est = "sy")}); gc()
+
+# Normalized Average
+ayf.1 <- rowMeans(ayf.full.1)
+ayf.2 <- rowMeans(ayf.full.2)
+```
+
+---
+
+# GEST \& YEST Proposed Method
+
+```{r}
+# N <- 1000
+# NF <- 1025
+
+gest <- function(sgram){
+  N <- length(sgram[,1])
+  A <- outer(1:N,1:N, function(l,j){rowSums(sgram)[l]/rowSums(sgram)[j]})
+  G <- Mod(eigen(A/N)$vectors[,1])
+  return(G); gc()
+}
+
+yest <- function(sgram){
+  N <- length(sgram[1,])
+  A <- outer(1:NF,1:NF, function(l,j){colSums(sgram)[l]/colSums(sgram)[j]})
+  S <- Mod(eigen(A/NF)$vectors[,1])
+  return(S); gc()
+}
+```
+
+### GEST: Estimating g(t)
+
+```{r}
+# ALL results
+sg.full.1 <- pbapply(trial$bc1, 3, gest); gc()
+sg.full.2 <- pbapply(trial$bc2, 3, gest); gc()
+
+# Normalized Average
+sg.1  <- rowMeans(sg.full.1)
+sg.2  <- rowMeans(sg.full.2)
+```
+
+### YEST: Estimating Sy(f)
+
+```{r}
+# ALL results
+syf.full.1 <- pbapply(trial$bc1, 3, yest); gc()
+syf.full.2 <- pbapply(trial$bc2, 3, yest); gc()
+
+# Normalized Average
+syf.1 <- normy(rowMeans(syf.full.1))
+syf.2 <- normy(rowMeans(syf.full.2))
+```
+
+### YF Colmeans: the simple approach
+
+```{r}
+# yf.cmFull.1 <- pbapply(trial$bc1, 3, colMeans)
+# yf.cmFull.2 <- pbapply(trial$bc2, 3, colMeans)
+# 
+# yf.cm.1 <- rowMeans(yf.cmFull.1)
+# yf.cm.2 <- rowMeans(yf.cmFull.2)
+```
+
+
+### Remove TRIAL
+```{r}
+rm(trial); gc()
+```
+
+### Stats [not currently in use]
+
+```{r}
+# FULL --- (warning: long-ish runtime)
+# g.bc.full  <- pbapply(trial$bc, 3, gest); gc()
+# g.cbc.full <- pbapply(trial$cbc,3, gest); gc()
+# 
+# # STATS
+# g.bc1 <- list(mean = pbapply( g.bc.full, 1, mean),
+#                 se = pbapply( g.bc.full, 1, sd)/sqrt(M))
+# g.cbc1<- list(mean = pbapply(g.cbc.full, 1, mean),
+#                 se = pbapply(g.cbc.full, 1, sd)/sqrt(M))
+# 
+# # Store Confidence Intervals
+# g.bc$LCL <- g.bc$mean - 2*g.bc$se
+# g.bc$UCL <- g.bc$mean + 2*g.bc$se
+# 
+# g.cbc$LCL <- g.cbc$mean - 2*g.cbc$se
+# g.cbc$UCL <- g.cbc$mean + 2*g.cbc$se
+```
+
+```{r save_1}
+# save
+# gc(); save.image(paste0("Data/gest_",my.type,"_B",B,"_full.RData"))
+# 
+# # remove trial (large)
+# rm(trial)
+# 
+# # save
+# gc(); save.image(paste0("Data/gest_",my.type,"_B",B,"_mini.RData"))
+```
+
+### MTM               ... and stats [better]
+
+```{r}
+# Time Series for MTM
+set.seed(68)
+yt <- arima.sim(model = list(ar = c(0.5,-0.5), sd = 10), n = N)
+
+# Spectrum Estimates
+yf.mtm <- spec.mtm(yt, plot = FALSE)$spec
+```
+
+```{r mtmStats}
+# Roll Die
+# set.seed(68); samp <- sample(1:M, 1)
+# 
+# # ~~~ 1-BC
+#   yf.bc1 <- colMeans(trial$bc1[,,samp])
+# 
+#   # Standard Error
+#   se.bc1 <- apply(trial$bc1[,,samp],2,sd)/sqrt(N)
+# 
+#   # +/- 2*SE
+#   ucl.bc1 <- yf.bc1+ 2*se.bc1
+#   lcl.bc1 <- yf.bc1- 2*se.bc1
+# 
+# 
+# # ~~~ 2-BC
+#   yf.bc2 <- colMeans(trial$bc2[,,samp])
+# 
+#   # Standard Error
+#   se.bc2 <- apply(trial$bc2[,,samp],2,sd)/sqrt(N)
+# 
+#   # +/- 2*SE
+#   ucl.bc2 <- yf.bc2 + 2*se.bc2
+#   lcl.bc2 <- yf.bc2 - 2*se.bc2
+
+# SAVE
+# rm(trial); gc()
+# save.image("Data/AR2_B200_samp.RData")
+```
+
+---
+
+# Smooth Spectrograms
+
+```{r}
+smoo <- function(g, yf){
+  
+  # Dimensions for Array
+  n  <- length( g[,1])
+  nf <- length(yf[,1])
+  m  <- length( g[1,])
+  
+  # Initialize Array
+  out <- array(0,c(n,nf,m))
+  
+  # Smooth each Simulation's Spectrogram
+  for(s in 1:m){
+    out[,,s] <- outer(g[,m],yf[,m])
+  }; gc()
+  
+  return(out)
+}
+```
+
+```{r}
+# --- Azadeh's results
+asx.full.1 <- smoo(ag.full.1, ayf.full.1)
+asx.full.2 <- smoo(ag.full.2, ayf.full.2)
+
+asx.1 <- pbapply( asx.full.1, 1:2, mean); rm(asx.full.1); gc()
+asx.2 <- pbapply( asx.full.2, 1:2, mean); rm(asx.full.2); gc()
+
+# --- Skye's Results
+ssx.full.1 <- smoo(sg.full.1, syf.full.1)
+ssx.full.2 <- smoo(sg.full.2, syf.full.2)
+
+ssx.1 <- pbapply( ssx.full.1, 1:2, mean); rm(ssx.full.1); gc()
+ssx.2 <- pbapply( ssx.full.2, 1:2, mean); rm(ssx.full.2); gc()
+
+gc()
+```
+
+```{r AR2only}
+if(my.type == "AR2"){
+not.stationary <- list(asx.1,asx.2)
+
+g.full <- matrix(1, nrow = length(ag.full.1[,1]), ncol = length(ag.full.1[1,]))
+
+# --- Azadeh's results
+asx.full.1 <- smoo(g.full, ayf.full.1)
+asx.full.2 <- smoo(g.full, ayf.full.2)
+
+asx.1 <- pbapply( asx.full.1, 1:2, mean); rm(asx.full.1); gc()
+asx.2 <- pbapply( asx.full.2, 1:2, mean); rm(asx.full.2); gc()
+
+# --- Skye's Results
+ssx.simp.full.1 <- smoo(g.full, syf.full.1)
+ssx.simp.full.2 <- smoo(g.full, syf.full.2)
+
+ssx.simp.1 <- pbapply( ssx.simp.full.1, 1:2, mean); rm(ssx.simp.full.1); gc()
+ssx.simp.2 <- pbapply( ssx.simp.full.2, 1:2, mean); rm(ssx.simp.full.2); gc()
+
+}
+```
+
+### Single instance construction
+
+```{r}
+samp <- 50
+
+g.samp.1   <-   sg.full.1[, samp]
+g.samp.2   <-   sg.full.2[, samp]
+
+yf.samp.1  <-  syf.full.1[, samp]
+yf.samp.2  <-  syf.full.2[, samp]
+
+## --- 2-BC
+bc1.smooth <- outer(yf.samp.1, g.samp.1)
+bc2.smooth <- outer(yf.samp.2, g.samp.2)
+
+bc1.simp.smooth <- outer(yf.samp.1, g.ar[,1])
+bc2.simp.smooth <- outer(yf.samp.2, g.ar[,1])
+
+```
+
+```{r prepSave}
+rm(pbc,tru,p.bc,v,vb,ar2,normy,Fs,ct,ct1,ct2,ct3,gt,tb,i,B2,FF,K,M,N,NF,w,b,t); gc()
+sheck
+```
+
+```{r saveFinal}
+save.image(paste0("Data/",my.type,
+                  if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                  "_B",B,
+                  "___S.RData"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# space
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hi
+

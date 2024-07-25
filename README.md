@@ -10,9 +10,13 @@
 #### July
 
 * installed BSS packages, read through documentation
-* creating cocktail party example
+* recreated cocktail party example, put together a little demo? IDK
+* walked through different algorithms, we've only been discussing SOBI so far
+* Looked at how to choose a set of lags $\{k\}$ for SOBI
 
 ---
+
+
 
 # Research Meeting Notes
 
@@ -191,9 +195,6 @@ First, go through BSS section of readme to clarify meeting notes and goals
 2. Familiarize myself with how this framework relates to (G)UMPs.
 3. Find a way to code the algorithm in R, ideally using established packages
 
----
-
-## July
 
 
 

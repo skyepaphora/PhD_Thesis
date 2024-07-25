@@ -1,0 +1,220 @@
+---
+output: pdf_document
+---
+
+# BSS
+
+$$
+\begin{aligned}
+    & && &\mathbf{X} &= \mathbf{AS + E} \\
+    & && &\mathbf{x(t)} &= \mathbf{As}(t) + \mathbf{e}(t)
+  \\&
+  \\&\mathbf{X} && (p \times N) &&\text{rows = observed time series}
+  \\&\mathbf{S} && (q \times N) &&\text{rows = source time series (unobserved)}
+  \\&\mathbf{A} && (p \times q) &&\text{mixing matrix (to be estimated)}
+  \\&\mathbf{E} && (p \times N) &&\text{(spatially white) noise matrix}
+\end{aligned}
+$$
+
+$\text{\underline{Goal:}}$ estimate $\mathbf{A}$ up to a permutation of its rows (essential equality)
+
+- Allows us to estimate $\mathbf{S}$ 
+- Note that columns of A reflect dynamic ranges of source series
+
+
+### Whitening
+
+$$
+\begin{aligned}
+    & && &\mathbf{z(t)} &= \mathbf{Us}(t) + \mathbf{We}(t)
+  \\&
+  \\  \mathbf{W}&   && (q \times p) &&\text{whitening matrix}
+  \\  \mathbf{U}&=\mathbf{WA}  
+                    && (q \times q) &&\text{Unitary (complex orthogonal) whitened mixing matrix}
+\end{aligned}
+$$
+
+$\text{\underline{Goal:}}$ estimate $\mathbf{U}$ from cov. matrix of whitened observations $R_z$, then solve for cov. matrix of sources $R_s$
+
+$$
+\begin{aligned}
+    R_z(\tau) &= \mathbf{U} R_s(\tau) \mathbf{U}^H \qquad \tau\neq 0
+  \\R_s(\tau) &= \mathbf{U}^H R_z(\tau) \mathbf{U} \qquad \tau\neq 0
+\end{aligned}
+$$
+
+### Algorithm (SOBI)
+
+1. Get sample covariance 
+2. Use this to estimate $\mathbf{W}$ and whitened signals $\mathbf z(t)$
+3. Get sample estimates $\{\hat R_z(\tau_j)\}_{j=1}^J$ for some $J>0$.
+4. Estimate $\mathbf{U}$ as the joint diagonalizer of this set using JD criterion
+5. Estimate $\mathbf{A}$ and $\mathbf{s}$ by solving in terms of $\mathbf{\hat U}$ and $\mathbf{\hat W}$
+
+# Cocktail Party Demo
+
+Check out [\textcolor{blue}{this documentation}](https://cran.r-project.org/web/packages/JADE/JADE.pdf) please
+
+```{r, warning=FALSE}
+# --- ??JADE --------- #
+library(JADE)
+library(BSSasymp)
+library(tuneR)
+
+library(knitr)
+library(kableExtra)
+```
+
+**ICA: ** 
+$x = zA^T + \mu$
+
+(IC1) the source components are mutually independent, \
+(IC2) $E(z) = 0$ and $E(z^Tz) = I_p$, \
+(IC3) at most one of the components is gaussian, and \
+(IC4) each source component is independent and identically distributed
+
+```{r}
+# --- Get source signals --------- #
+S1 <- readWave(system.file("datafiles/source5.wav", package = "JADE"))
+S2 <- readWave(system.file("datafiles/source7.wav", package = "JADE"))
+S3 <- readWave(system.file("datafiles/source9.wav", package = "JADE"))
+```
+
+1. introduce noise component to the data
+2. scale the components to have unit variances
+3. generate components of mixing matrix from a std. normal distribution [except no? It says runif?]
+4. mix the sources with mixing matrix
+
+```{r}
+set.seed(321)
+
+N <- 50000 # series length
+p <- 4     # number of observed series
+
+# noise() outputs a formal wave object class, unlike rnorm()
+NOISE <- noise("white", duration = 50000)
+
+# get source matrix (transpose -- N x q)
+S <- cbind(S1@left, S2@left, S3@left, NOISE@left)
+
+# force each column of S to have unit variance
+S <- scale(S, center = FALSE, scale = apply(S, 2, sd))
+
+# format columns as time series, set total length = 6.25 seconds
+S.t <- ts(S, start = 0, frequency = 8000)
+
+# construct mixing matrix
+A <- matrix(runif(p^2, 0, 1), p, p)
+
+# mix sources with noise via mixing matrix
+X <- tcrossprod(S.t, A) # this is S.t %*% t(A)
+
+# Matrix of observed time series
+X.t <- ts(X, start = 0, frequency = 8000)
+```
+
+```{r, fig.height=5, fig.width=8, echo = FALSE}
+par(mar = c(4,3,1,0))
+plot(cbind(X.t,S.t), main = "", plot.type = "m")
+```
+
+```{r, echo = FALSE}
+# These are playable waves
+x1 <- normalize(Wave(left = X[, 1], samp.rate = 8000, bit = 8), unit = "8")
+x2 <- normalize(Wave(left = X[, 2], samp.rate = 8000, bit = 8), unit = "8")
+x3 <- normalize(Wave(left = X[, 3], samp.rate = 8000, bit = 8), unit = "8")
+x4 <- normalize(Wave(left = X[, 4], samp.rate = 8000, bit = 8), unit = "8")
+```
+
+```{r, echo = FALSE}
+# play(x1)
+# play(x2)
+# play(x3)
+# play(x4)
+```
+
+#### JADE 
+(**J**oint **A**pproximate **D**iagonalization of **E**igenmatrices)
+
+[*J.-F. Cardoso and A. Souloumiac. Blind beamforming for non gaussian signals. In IEE Proceedings-F,volume 140, pages 362-370. IEEE, 1993.*](https://sci-hub.se/10.1049/ip-f-2.1993.0054)
+
+#### SOBI
+(**S**econd **O**rder **B**lind **I**dentification)
+
+*THIS IS BELOU 97!* In fact, this is the exact algorithm I outlined earlier in this document.
+
+#### NSS-SD, NSS-JD and NSS-TD-JD
+(**N**onstationary **S**ource **S**eparation - considering multiple **T**ime **D**elayed correlation matrices - using **J**oint [or **S**imultaneous (old)] **D**iagonaliztion)
+
+[*Choi and A. Cichocki. Blind separation of nonstationary sources in noisy mixtures. Electronics Letters, 36:848-849, 2000a.*](https://sci-hub.se/10.1049/el:20000623)
+
+```{r}
+# These are all estimates of the "unmixing matrix" A^-
+jade <- JADE(X)   # subset of lags can be set using parameter 'k'
+sobi <- SOBI(X.t)
+nss.td.jd <- NSS.TD.JD(X.t)
+```
+
+To check, we want $\hat A^-A$ to have one unit entry per column/row, zeroes elsewhere, as per the "essential equality" described, below. \
+
+From Belouchrani97: \
+"Two matrices $M$ and $N$ are said to be essentially equal if there exists a matrix $P$ such that $M = NP$, where $P$ has exactly one nonzero entry in each row and column, where these entries have unit modulus."
+
+The matrices $\hat A^-A$ are below, with minimum distance (MD) index
+
+```{r, echo = FALSE}
+kable(round(coef(jade) %*% A, 4), format = 'pipe',
+      caption = paste("JADE; MD =", round(MD(coef(jade),A),4)))
+kable(round(coef(sobi) %*% A, 4), format = 'pipe',
+      caption = paste("SOBI; MD =", round(MD(coef(sobi),A),4)))
+kable(round(coef(nss.td.jd) %*% A, 4), format = 'pipe',
+      caption = paste("NSS-TD-JD; MD =", round(MD(coef(nss.td.jd),A),4)))
+```
+
+## Selecting a set of Lags to improve SOBI
+
+"The user needs to choose the value of T, the number of autocovariances to be used in the estimation. The value of T should be such that all lags with non-zero autocovariances are included, and the estimation of such autocovariances is still reliable. We choose T=1000." - From JADE documentation
+
+```{r, cache = TRUE}
+# Estimates (asymptotically) covariance matrix R_z
+ascov1 <- ASCOV_SOBI_estN(X.t, taus = 1, M = 1000)
+ascov2 <- ASCOV_SOBI_estN(X.t, taus = 1:3, M = 1000)
+ascov3 <- ASCOV_SOBI_estN(X.t, taus = 1:12, M = 1000)
+ascov4 <- ASCOV_SOBI_estN(X.t, taus = c(1, 2, 5, 10, 20), M = 1000)
+ascov5 <- ASCOV_SOBI_estN(X.t, taus = 1:50, M = 1000)
+ascov6 <- ASCOV_SOBI_estN(X.t, taus = c(1:20, (5:20) * 5), M = 1000)
+ascov7 <- ASCOV_SOBI_estN(X.t, taus = 11:50, M = 1000)
+```
+
+```{r, cache = TRUE}
+SumVar <- t(c(sum(diag(ascov1$COV_W)), sum(diag(ascov2$COV_W)),
+              sum(diag(ascov3$COV_W)), sum(diag(ascov4$COV_W)),
+              sum(diag(ascov5$COV_W)), sum(diag(ascov6$COV_W)),
+              sum(diag(ascov7$COV_W))))
+
+colnames(SumVar) <- c("(i)","(ii)","(iii)","(iv)","(v)","(vi)","(vii)")
+
+MDs <- t(c(MD(ascov1$W,A), MD(ascov2$W,A),
+           MD(ascov3$W,A), MD(ascov4$W,A),
+           MD(ascov5$W,A), MD(ascov6$W,A), MD(ascov7$W,A)))
+colnames(MDs) <- colnames(SumVar)
+```
+
+```{r, echo = FALSE}
+kable(SumVar, format = 'pipe', caption = "Diagnostic: sum of limiting variances")
+kable(MDs, format = 'pipe', caption = "Diagnostic: minimum distance index (only available because we constructed A)")
+```
+
+Thus we can use the sum of limiting variances approach (available through BSSasymp functions) in place of Minimum distance index when A is unknown.\
+
+
+
+
+
+
+
+
+
+
+
+

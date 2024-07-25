@@ -1,0 +1,515 @@
+### Setup
+
+```{r}
+## --- Packages ------------------------------------ ##
+library(multitaper)
+library(pbapply)
+library(kableExtra)
+library(itsmr)
+library(animation)
+library(fields, quietly = TRUE, warn.conflicts = FALSE)
+```
+
+```{r}
+## --- Splot + Spalette ---------------------------- ##
+load("~/Research/Skyes_Toolbox/plots_and_palettes/spalette.RData")
+load("~/Research/Skyes_Toolbox/plots_and_palettes/splot.RData")
+```
+
+
+
+# Spectrograms
+
+## PBCs : 1 x 3 lattice
+
+```{r setup_pbcGram}
+## --- Load 
+# load(file = "Data/AR2_B200___mini.RData")
+# load(file = "Data/UMP_c1_B100___mini.RData")
+# load(file = "Data/UMP_c1_B150___mini.RData")
+# load(file = "Data/UMP_c1_B200___mini.RData")
+# load(file = "Data/UMP_c1_B300___mini.RData")
+# load(file = "Data/UMP_c3_B150___mini.RData")
+# load(file = "Data/UMP_c3_B200___mini.RData")
+# load(file = "Data/UMP_c3_B300___mini.RData")
+# load(file = "Data/UMP_c3_B400___mini.RData")
+# load(file = "Data/other_B100___mini.RData")
+# load(file = "Data/other_B200___mini.RData")
+# load(file = "Data/other_B400___mini.RData")
+
+## --- sgram legend placement
+leggo <- list(single = c(0.925 ,0.95 ,0.1 ,0.925),
+              double.h = c(0.9 ,0.94 ,0.1 ,0.925),
+              triple.h = c(0.85 ,0.9 ,0.15,0.875))
+
+## --- Normalizing function
+kable(data.frame(range(tru$xtf),range(pbc$bc1$mean),range(pbc$bc2$mean)), format = "pipe")
+
+normy <- function(x){x*1e2*(x>=0)}  # AR, UMP
+# normy <- function(x){x*(x>=0)}    # other (non-stationary AR)
+
+## --- Common z-axis limits
+# zlim <- c(0,max(normy(pbc$bc1$mean),normy(pbc$bc2$mean),tru$xtf))
+zlim <- c(range(normy(pbc$bc1$mean),normy(pbc$bc2$mean),tru$xtf)) 
+
+# tix <- round(seq(0,zlim[2],length.out=7))         # legend ticks [0,max]
+tix <- round(seq(zlim[1],zlim[2],length.out=7))   # legend ticks [range]
+```
+
+```{r pbcGram_GO}
+# # --- Prep 3 
+wid <- 8
+png(filename = paste0("Plots/PBCs___",my.type,
+                      if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                      "_B",B,".png"),
+width = wid, height = wid/3, units = "in", res = 400, pointsize = 9,bg = "transparent")
+par(mfrow = c(1,3), mar = c(4,0,3.5,1), oma = c(0,4,0,5.6))
+# ---------------------------------------------------------------------------------
+
+  ## --- TRUE
+  image(x = Fs, y = t, z = t((tru$xtf)),
+        xlab = "", ylab = "", zlim = zlim,
+        las = 1, col = tim.colors()); sox()
+  abline(h = range(tb), col = skrown$salt, lty = 2)
+  slab(
+       # "Example A   [AR(2)]",
+       "Example B   [UMP]",
+       # "Example C   [UMP]",
+       # "Example D [Non-Stationary]",
+       bquote("True"~"Time-Frequency Spectrum"),"Frequency","Time", yline = 2.5, mline = 2, cex.factor = 0.9)
+
+  ## --- 1-BC
+  image(x = Fs, y = t, z = t(normy(pbc$bc1$mean)),
+        xlab = "", ylab = "", zlim = zlim,
+        las = 1, yaxt = 'n', col = tim.colors()); sox()
+  abline(h = range(tb), col = skrown$salt, lty = 2)
+  slab(
+       # "1-BC: Example A",
+       "1-BC: Example B",
+       # "1-BC: Example C",
+       # "1-BC: Example D",
+       bquote("Average over M ="~.(M)~"simulations;"~bold("B =")~bold(.(as.character(B))) ),
+       "Frequency","", mline = 2, cex.factor = 0.9)
+
+  ## --- 2-BC
+  image(x = Fs, y = t, z = t(normy(pbc$bc2$mean)),
+        xlab = "", ylab = "", zlim = zlim,
+        las = 1, yaxt = 'n', col = tim.colors()); sox()
+  abline(h = range(tb), col = skrown$salt, lty = 2)
+  slab(
+       # "2-BC: Example A",
+       "2-BC: Example B",
+       # "2-BC: Example C",
+       # "2-BC: Example D",
+       bquote("Average over M ="~.(M)~"simulations;"~bold("B =")~bold(.(as.character(B))) ),
+       "Frequency","", mline = 2, cex.factor = 0.9)
+  
+  ## --- Legend
+  par(oma = c(0,0,0,0))
+  image.plot(legend.only = TRUE, legend.lab = "Power", zlim = zlim,
+             # legend.line = 0.5, legend.cex = 1.2, # Single
+             # legend.line = 1, legend.cex = 1.1, # Double H
+             legend.line = -3, legend.cex = 1, # Triple H
+             smallplot   = leggo$triple.h,
+             axis.args = list(at = tix, labels = tix))
+  
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+
+## Smoothed PBCs : 3 x 1 lattice
+
+```{r setup_smooGram}
+## --- Load 
+# load("Data/AR2_B200___S.RData"); load("Data/AR2_B200___mini.RData")
+load("Data/UMP_c1_B100___S.RData"); load("Data/UMP_c1_B100___mini.RData"); gc()
+# load("Data/UMP_c1_B150___S.RData"); load("Data/UMP_c1_B150___mini.RData"); gc()
+# load("Data/UMP_c1_B200___S.RData"); load("Data/UMP_c1_B200___mini.RData"); gc()
+# load("Data/UMP_c1_B300___S.RData"); load("Data/UMP_c1_B300___mini.RData"); gc()
+# load("Data/UMP_c3_B150___S.RData"); load("Data/UMP_c3_B150___mini.RData"); gc()
+# load("Data/UMP_c3_B200___S.RData"); load("Data/UMP_c3_B200___mini.RData"); gc()
+# load("Data/UMP_c3_B300___S.RData"); load("Data/UMP_c3_B300___mini.RData"); gc()
+
+## --- sgram legend placement
+leggo <- c(0.85 ,0.9 ,0.15,0.875)
+
+## --- Normalizing function
+# normy <- function(x){x*1e3*(x>=0)}  # works for UMP -- if not applied to samp
+# normy <- function(x){x*2e3*(x>=0)} 
+normy <- function(x){abs(x/max(abs(x)))}
+
+## --- BC and Simplification Type
+poly <- 1
+poly <- 2
+
+simp <- 0
+# simp <- 1
+
+    if(poly == 1){
+      samp   <- bc1.samp
+      smooth <- bc1.smooth*(simp==0) #+ bc1.simp.smooth*(simp==1) ## only took these off for c3_B150
+      ssx    <- ssx.1*(simp==0) #+ ssx.simp.1*(simp==1)
+    } else {
+      samp   <- bc2.samp
+      smooth <- bc2.smooth*(simp==0) #+ bc2.simp.smooth*(simp==1)
+      ssx    <- ssx.2*(simp==0) #+ ssx.simp.2*(simp==1)
+    }
+
+## --- Common z-axis limits
+zlim <- c(range(normy(samp),normy(smooth),normy(ssx))) #
+
+tix <- round(seq(zlim[1],zlim[2],length.out=7),2)   # legend ticks [range]
+
+# --- Check limits
+kable(data.frame(range(samp),range(smooth),range(ssx)), format = "pipe")
+kable(data.frame(range(samp),range(normy(smooth)),range(normy(ssx))), format = "pipe")
+```
+
+```{r smooGram_GO}
+# # --- Prep 3 
+wid <- 8
+png(filename = paste0("Prospectus_Defense/Plots/Sx___",my.type,
+                      if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                      if(my.type=="AR2"){paste0("_simp-",simp)}else{NULL},
+                      "_B",B,
+                      "___",poly,"-BC.png"),
+width = wid, height = wid/3, units = "in", res = 400, pointsize = 9, bg = "transparent")
+par(mfrow = c(1,3), mar = c(4,0,3.5,1), oma = c(0,4,0,5.6))
+# ---------------------------------------------------------------------------------
+
+  ## --- raw 2-BC
+  image(x = Fs, y = t, z = t(normy(samp)),
+        xlab = "", ylab = "", zlim = zlim,
+        las = 1, col = tim.colors()); sox()
+  abline(h = range(tb), col = skrown$salt, lty = 2)
+  slab(
+       bquote(bold("Unsmoothed")~bold(.(as.character(poly)))*bold("-BC: Example B")),
+       bquote("Single simulation;"~bold("B =")~bold(.(as.character(B))) ),
+       "Frequency","Time", mline = 2, yline = 2.5, cex.factor = 0.9)
+  
+    ## --- smooth 2-BC
+  image(x = Fs, y = t, z = (normy(smooth)),
+        xlab = "", ylab = "", zlim = zlim,
+        las = 1, yaxt = 'n', col = tim.colors()); sox()
+  abline(h = range(tb), col = skrown$salt, lty = 2)
+  slab(
+       bquote(bold("Smoothed")~bold(.(as.character(poly)))*bold("-BC: Example B")),
+       bquote("Single simulation;"~bold("B =")~bold(.(as.character(B))) ),
+       "Frequency","", mline = 2, cex.factor = 0.9)
+  
+  ## --- mean smooth 2-BC
+  image(x = Fs, y = t, z = t(normy(ssx)),
+        xlab = "", ylab = "", zlim = zlim,
+        las = 1, yaxt = 'n', col = tim.colors()); sox()
+  abline(h = range(tb), col = skrown$salt, lty = 2)
+  slab(
+       bquote(bold("Smoothed")~bold(.(as.character(poly)))*bold("-BC: Example B")),
+       bquote("Average over M ="~.(M)~"simulations;"~bold("B =")~bold(.(as.character(B))) ),
+       "Frequency","", mline = 2, cex.factor = 0.9)
+
+
+  ## --- Legend
+  par(oma = c(0,0,0,0))
+  image.plot(legend.only = TRUE, legend.lab = "Power", zlim = zlim,
+             legend.line = -3, legend.cex = 1,
+             smallplot   = leggo,
+             axis.args = list(at = tix, labels = tix))
+  
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+# GEST \& YEST
+
+## 2 x 1 lattice
+
+```{r setup_gyf}
+## --- Load 
+# load("Data/AR2_B200___S.RData"); load("Data/AR2_B200___mini.RData"); gc()
+# load("Data/UMP_c1_B150___S.RData"); load("Data/UMP_c1_B150___mini.RData"); gc()
+# load("~/Research/PhD_Proposal/Data/UMP_c1_B200___S.RData"); 
+# load("~/Research/PhD_Proposal/Data/UMP_c1_B200___mini.RData"); gc()
+# load("Data/UMP_c1_B100___S.RData"); load("Data/UMP_c1_B100___mini.RData"); gc()
+load("Data/UMP_c1_B200___S.RData"); load("Data/UMP_c1_B200___mini.RData"); gc()
+# load("Data/UMP_c1_B300___S.RData"); load("Data/UMP_c1_B300___mini.RData"); gc()
+# load("Data/UMP_c3_B200___S.RData"); load("Data/UMP_c3_B200___mini.RData"); gc()
+# load("Data/UMP_c3_B300___S.RData"); load("Data/UMP_c3_B300___mini.RData"); gc()
+
+## --- BC Type
+poly <- 1
+poly <- 2
+
+    if(poly == 1){
+      ag <- ag.1; ayf <- ayf.1
+      sg <- sg.1; syf <- syf.1
+    } else {
+      ag <- ag.2; ayf <- ayf.2
+      sg <- sg.2; syf <- syf.2
+    }
+
+## --- Normalizing function
+normy <- function(x){abs(x/max(abs(x)))}
+
+## --- Common limits
+glim <- range(gt,  normy(sg), normy(ag) )
+flim <- range(normy(tru$yf), normy(syf), normy(ayf))
+
+# --- Check limits
+kable(data.frame(range(gt),range(sg),range(ag),range(normy(tru$yf)),range(syf),range(ayf)), format = "pipe")
+```
+
+```{r}
+# --- Prep 2
+# wid <- 8
+png(filename = paste0("Prospectus_Defense/Plots/G-YF___",
+  # filename = paste0("FinalPlots/G-YF___",
+                      my.type,
+                      if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                      "_B",B,
+                      "___",poly,"-BC.png"),
+# width = wid, height = wid/2.25, units = "in", res = 400, pointsize = 9)
+width = 17, height = 8*0.8, units = "in", res = 200, pointsize = 10, bg="transparent")
+par(mfrow = c(1,2), mar = c(4,6.5,3,2.5))
+# par(mfrow = c(1,2), mar = c(4,3.75,3.5,0.5), bg = "#cfc2b4")
+# ---------------------------------------------------------------------------------
+
+
+## --------- G --------- ##
+    # --- True g
+    splot(t,
+            # rep(1,N),                                           # AR(2)
+            gt ,
+          type = "l",
+          # ylim = c(0.5,1.5),                                    # AR(2); p=1
+          # ylim = c(0,1.75),                                     # AR(2); p=2
+          ylim = glim,
+          labs = 0, lwd = 2, colr = skrown$smoke)
+
+    # --- My g
+    sadd(t, normy(sg), type = "l", col = skaturate$blue, lwd = 2)
+    
+    # --- Azadeh's g
+    sadd(t, normy(ag), type = "l", col = skaturate$red, lwd = 1)
+
+    # Other lines
+    abline(v = range(tb), col = skrown$B1, lty = 2)
+    # abline(h = 0, col = skrown$B1, lty = 3)
+
+    # Labels
+    slab(
+         # "Normalized Estimates of g(t): Example A",
+         "Normalized Estimates of g(t): Example B",
+         # "Normalized Estimates of g(t): Example C",
+         bquote("Average over M ="~.(M)~"simulations;"~
+                  bold("B =")~bold(.(as.character(B)))*";"~
+                  bold("p =")~bold(.(as.character(poly)))),
+         "Time", "g(t)", yline = 2.5, mline = 2, cex.factor = 1.2)
+    legend(
+           "topright",
+           # "top",                                             # for ex C (c3) only
+       legend = c("g(t)",
+                  bquote(hat(g)[1]*"(t)"),
+                  bquote(hat(g)[2]*"(t)"),
+                  "T(B) range"),
+          col = c(skrown$B2, skaturate$red, skaturate$blue, skrown$B1),
+          lwd = c(2,1,2,1), lty = c(1,1,1,2),
+        inset = 0.01*c(1.5,2), y.intersp = 1.25, cex = 0.9, bg = skrown$salt)
+
+
+## --------- Sy(f) --------- ##
+    # --- True sy
+    splot(Fs, normy(tru$yf), type = "l", ylim = flim, labs = 0, lwd = 2, colr = skrown$smoke)
+    
+    # --- Multitaper
+    # sadd(Fs, yf.mtm, type = "l", col = skaturate$green, lwd = 1)
+
+    # --- My sy
+    sadd(Fs, normy(syf), type = "l", col = skaturate$blue, lwd = 2)
+    
+    # --- Azadeh's sy
+    sadd(Fs, normy(ayf), type = "l", col = skaturate$red, lwd = 1)
+    
+    # Labels
+    slab(
+         # bquote(bold("Normalized Estimates of"~S[Y]*"(f): Example A")),
+         bquote(bold("Normalized Estimates of"~S[Y]*"(f): Example B")),
+         # bquote(bold("Normalized Estimates of"~S[Y]*"(f): Example C")),
+         bquote("Average over M ="~.(M)~"simulations;"~
+                  bold("B =")~bold(.(as.character(B)))*";"~
+                  bold("p =")~bold(.(as.character(poly)))),
+         "Frequency", bquote("Spectrum"~S[Y]*"(f)"), yline = 2.5, cex.factor = 1.2)
+    legend("topright",
+       legend = c(bquote(S[Y]*"(f)"),
+                  bquote(hat(S)["Y, 1"]),
+                  bquote(hat(S)["Y, 2"])),#,
+                  # bquote(hat(S)["Y, Multitaper"])),
+          col = c(skrown$B2, skaturate$red, skaturate$blue),
+          lwd = c(2,1,2), inset = 0.01*c(1.5,2), y.intersp = 1.25, cex = 0.9, bg = skrown$salt)
+
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+---
+
+## Comparing Stationary est Yf to Multitaper
+
+```{r}
+flim.1 <- range(normy(tru$yf), normy(syf.1), yf.mtm/4)
+flim.2 <- range(normy(tru$yf), normy(syf.2), yf.mtm/4)
+```
+
+```{r}
+# --- Prep 2
+wid <- 8
+png(filename = paste0("FinalPlots/MG-YF___",
+                      my.type,
+                      # if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                      "_B",B,
+                      ".png"),
+width = wid, height = wid/2.25, units = "in", res = 400, pointsize = 9)
+par(mfrow = c(1,2), mar = c(4,3.75,3.5,0.5))
+# ---------------------------------------------------------------------------------
+
+## --------- 1-BC --------- ##
+    # --- True sy
+    splot(Fs, normy(tru$yf), type = "l", ylim = flim.1, labs = 0, lwd = 2)
+    
+    # --- Multitaper
+    sadd(Fs, yf.mtm/4, type = "l", col = skaturate$green, lwd = 1)
+
+    # --- My sy
+    sadd(Fs, normy(yf.samp.1), type = "l", col = skaturate$blue, lwd = 2)
+    
+    # Labels
+    slab(
+         bquote(bold("Normalized "~hat(S)[Y]*"(f) and Multitaper: Example A")),
+         bquote("Single simulation;"~
+                  bold("B =")~bold(.(as.character(B)))*";"~
+                  bold("p = 1")),
+         "Frequency", bquote("Spectrum"~S[Y]*"(f)"), yline = 2.5, cex.factor = 1.2)
+    legend("topright",
+       legend = c(bquote(S[Y]*"(f)"),
+                  bquote(hat(S)["Y, 2"]),
+                  bquote(hat(S)["Y, M"])),
+          col = c(skrown$B2, skaturate$blue, skaturate$green),
+          lwd = 2, inset = 0.01*c(1.5,2), y.intersp = 1.25, cex = 0.9)
+    
+## --------- 2-BC --------- ##
+    # --- True sy
+    splot(Fs, normy(tru$yf), type = "l", ylim = flim.2, labs = 0, lwd = 2)
+    
+    # --- Multitaper
+    sadd(Fs, yf.mtm/4, type = "l", col = skaturate$green, lwd = 1)
+
+    # --- My sy
+    sadd(Fs, normy(yf.samp.2), type = "l", col = skaturate$blue, lwd = 2)
+    
+    # Labels
+    slab(
+         bquote(bold("Normalized "~hat(S)[Y]*"(f) and Multitaper: Example A")),
+         bquote("Single simulation;"~
+                  bold("B =")~bold(.(as.character(B)))*";"~
+                  bold("p = 2")),
+         "Frequency", bquote("Spectrum"~S[Y]*"(f)"), yline = 2.5, cex.factor = 1.2)
+    legend("topright",
+       legend = c(bquote(S[Y]*"(f)"),
+                  bquote(hat(S)["Y, 2"]),
+                  bquote(hat(S)["Y, M"])),
+          col = c(skrown$B2, skaturate$blue, skaturate$green),
+          lwd = 2, inset = 0.01*c(1.5,2), y.intersp = 1.25, cex = 0.9)
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# space 
+
+
+
+
+
+
+
+
+
+```{r}
+png("Equations/grid.png", width=13.59,height=12.15,units="cm",res=400)
+par(mar=c(0,0,0,0))
+splot(0,0,xlim = c(-1,1),ylim=c(-1,1), skor=FALSE,labs=0,xaxt="n",yaxt="n")
+rekt("#cfc2b4")
+abline(v=seq(-1,1,length.out=7),h=seq(-1,1,length.out=7), col = "#544536",lwd=3)
+sox("#cfc2b4")
+dev.off()
+```
+
+
+
+
+

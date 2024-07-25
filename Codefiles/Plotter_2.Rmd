@@ -1,0 +1,453 @@
+
+```{r}
+## --- Packages ------------------------------------ ##
+library(multitaper)
+library(pbapply)
+library(kableExtra)
+library(itsmr)
+library(animation)
+library(fields, quietly = TRUE, warn.conflicts = FALSE)
+
+## --- Splot + Spalette ---------------------------- ##
+load("~/Research/Skyes_Toolbox/splot.RData")
+load("~/Research/Skyes_Toolbox/spalette.RData")
+# load("~/Research/PhD_Proposal/FinalData/AR2_B200_full_yf.RData")
+
+## --- Data ----------------------------- ##
+# load("Data/B300_c1_UMP_reduced_S-2bc.RData")
+# load("Data/B300_c3_UMP_reduced_S-2bc.RData")
+# load("Data/B200_c1_UMP_reduced_S-2bc.RData")
+# load("Data/B200_c3_UMP_reduced_S-2bc.RData")
+
+## --- Common z-axis limits
+zlim <- 0:1 
+
+## --- sgram legend placement
+leggo <- list(single = c(0.925,0.95,0.1,0.925),
+              double.h = c(0.9,0.94,0.1,0.925))
+
+normy <- function(x){abs(x/max(abs(x)))}
+```
+
+```{r}
+# desperate
+sg <- sg.1
+ag <- ag.1
+```
+
+```{r}
+sg <- sg.2
+ag <- ag.2
+```
+
+# GEST \& YEST
+
+```{r}
+# --- Prep 2
+png(filename = paste0("DON'T DO IT/Plots/G-YF___",
+                      my.type,
+                      if(my.type=="UMP"){paste0("_",cc)}else{NULL},
+                      "_B",B,".png"),
+width = 17, height = 8*0.8, units = "in", res = 200, pointsize = 10, bg="transparent")
+par(mfrow = c(1,2), mar = c(4,6.5,3,2.5))
+# ---------------------------------------------------------------------------------
+
+
+
+## --------- G --------- ##
+# png(filename = paste0("FinalPlots/g_",my.type,"_B",B,"_",cc,".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0))
+# ---------------------------------------------------------------------------------
+
+    lim <- range(gt, sg, -ag)
+
+    # --- True g
+    splot(t, gt , type = "l", ylim = lim, labs = 0, lwd = 2)
+
+    # --- Azadeh's g
+    sadd(t, ag, type = "l", col = skaturate$red, lwd = 2)
+
+    # --- My g
+    sadd(t, sg, type = "l", col = skaturate$blue, lwd = 2)
+
+    # Other lines
+    abline(v = range(tb), col = skrown$B1, lty = 2)
+    abline(h = 0, col = skrown$B1, lty = 3)
+
+    # Labels
+    slab("Normalized Estimates of g(t)",
+         bquote("Blockwidth B ="~.(B)*"; Mean result over 100 Simulations"),
+         "Time", "g(t)", yline = 2.5, cex.factor = 1.2)
+    legend("topright",
+       legend = c("g(t)",
+                  bquote(hat(g)[1]),
+                  bquote(hat(g)[2])),
+          col = c(skrown$B2, skaturate$red, skaturate$blue),
+          lwd = 2, inset = 0.01*1:2, y.intersp = 1.25, cex = 1.1)
+
+# ---------------------------------------------------------------------------------
+# dev.off()
+
+
+
+## --------- Sy(f) --------- ##
+# png(filename = paste0("FinalPlots/yf_",my.type,"_B",B,"_",cc,".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0))
+# ---------------------------------------------------------------------------------
+
+    lim <- range(normy(tru$yf), syf, ayf)
+
+    # --- True sy
+    splot(Fs, normy(tru$yf), type = "l", ylim = lim, labs = 0, lwd = 2)
+
+    # --- Azadeh's sy
+    sadd(Fs, ayf, type = "l", col = skaturate$red, lwd = 2)
+
+    # --- My sy
+    sadd(Fs, syf, type = "l", col = skaturate$blue, lwd = 2)
+    
+    # Labels
+    slab(bquote(bold("Normalized Estimates of"~S[Y]*"(f)")),
+         bquote("Stationary AR(2); Mean result over 100 Simulations"), 
+         "Frequency", bquote("Spectrum"~S[Y]*"(f)"), yline = 2.5, cex.factor = 1.2)
+    legend("topright",
+       legend = c(bquote(S[Y]*"(f)"),
+                  bquote(hat(S)["Y, 1"]),
+                  bquote(hat(S)["Y, 2"])),
+          col = c(skrown$B2, skaturate$red, skaturate$blue),
+          lwd = 2, inset = 0.01*1:2, y.intersp = 1.25, cex = 1.1)
+
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+
+# Smooth Spectrograms
+
+```{r}
+# # --- Prep 3
+# png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_smooths3",".png"),
+# width = 6, height = 10, units = "in", res = 200, pointsize = 10)
+# par(mfrow = c(3,1), mar = c(4,4.4,4.4,0)) #, oma = c(2.5,0,0,0))
+# ---------------------------------------------------------------------------------
+# 
+# 
+# 
+# --- Prep 2
+png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_smooths2",".png"),
+width = 17, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+par(mfrow = c(1,2), mar = c(4,4,3,5), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+# 
+# 
+# 
+# --- Prep 1
+# {png(filename = paste0("FinalPlots/sx_",my.type,"_",cc,"_true",".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+
+
+
+## --------- TRUE --------- ##
+    # --- True sx
+    # image(Fs, t, t(normy(tru$xtf)), zlim = zlim,
+    #   xlab = "", ylab = "", las = 1, col = tim.colors()); sox(); gc()
+    # slab("True TFS", "UMP: Modulated Stationary AR(2)", "Frequency", "Time",
+    #      cex.factor = 1.25, yline = 2.75) # Single
+    #      # cex.factor = 1.5, yline = 2.5) # Double H
+    # par(oma = c(0,0,0,0))
+    # image.plot(legend.only = TRUE, legend.lab = "Power", zlim = 0:1,
+    #            legend.line = 0.5, legend.cex = 1.2, # Single
+    #            # legend.line = 1, legend.cex = 1.2, # Double H
+    #            smallplot   = leggo$single)
+
+# ---------------------------------------------------------------------------------
+# dev.off()}
+
+
+
+## --------- MEAN --------- ##
+# png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_smooth_mean",".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+
+    # --- mean smooth
+    image(Fs, t, t(normy(ssx)), zlim = zlim,
+    xlab = "", ylab = "", las = 1, col = tim.colors()); sox(); gc()
+    slab("Smoothed 2-BC Spectrogram", paste("Mean over 100 Simulations; B =",B), "Frequency", "Time",
+         # cex.factor = 1.25, yline = 2.75) # Single
+         cex.factor = 1.5, yline = 2.5) # Double H
+    abline(h = range(tb), col = "magenta")
+    # par(oma = c(0,0,0,0))
+    # image.plot(legend.only = TRUE, legend.lab = "Power", zlim = 0:1,
+    #            # legend.line = 0.5, legend.cex = 1.2, # Single
+    #            legend.line = 1, legend.cex = 1.2, # Double H
+    #            smallplot   = leggo$single)
+
+# ---------------------------------------------------------------------------------
+# dev.off()
+
+
+
+## --------- SAMPLE --------- ##
+# png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_smooth_sample",".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+
+    # --- smooth samp
+    image(Fs, t, (normy(bc2.smooth)), zlim = zlim,
+    xlab = "", ylab = "", las = 1, col = tim.colors()); sox(); gc()
+    slab("Smoothed 2-BC Spectrogram", paste("Single Simulation; B =",B), "Frequency", "Time",
+         # cex.factor = 1.25, yline = 2.75) # Single
+         cex.factor = 1.5, yline = 2.5) # Double H
+    abline(h = range(tb), col = "magenta")
+    par(oma = c(0,0,0,0))
+    image.plot(legend.only = TRUE, legend.lab = "Power", zlim = 0:1,
+               # legend.line = 0.5, legend.cex = 1.2, # Single
+               legend.line = 1, legend.cex = 1.2, # Double H
+               smallplot   = leggo$double.h)
+
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+# Raw Spectrograms
+
+```{r}
+# --- Prep 2
+png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_raws2",".png"),
+width = 17, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+par(mfrow = c(1,2), mar = c(4,4,3,5), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+
+
+
+## --------- MEAN --------- ##
+# png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_raw_mean",".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+
+    # --- mean smooth
+    image(Fs, t, t(normy(pbc$bc2$mean)), zlim = zlim,
+    xlab = "", ylab = "", las = 1, col = tim.colors()); sox(); gc()
+    slab("Raw 2-BC Spectrogram", paste("Mean over 100 Simulations; B =",B), "Frequency", "Time",
+         # cex.factor = 1.25, yline = 2.75) # Single
+         cex.factor = 1.5, yline = 2.5) # Double H
+    abline(h = range(tb), col = "magenta")
+    # par(oma = c(0,0,0,0))
+    # image.plot(legend.only = TRUE, legend.lab = "Power", zlim = 0:1,
+    #            # legend.line = 0.5, legend.cex = 1.2, # Single
+    #            legend.line = 1, legend.cex = 1.2, # Double H
+    #            smallplot   = leggo$single)
+
+# ---------------------------------------------------------------------------------
+# dev.off()
+
+
+
+## --------- SAMPLE --------- ##
+# png(filename = paste0("FinalPlots/sx_",my.type,"_B",B,"_",cc,"_raw_sample",".png"),
+# width = 8, height = 8*0.8, units = "in", res = 200, pointsize = 10)
+# par(mar = c(4,4,3,0), oma = c(0,0,0,5))
+# ---------------------------------------------------------------------------------
+
+    # --- smooth samp
+    image(Fs, t, t(normy(bc2.samp)), zlim = zlim,
+    xlab = "", ylab = "", las = 1, col = tim.colors()); sox(); gc()
+    slab("Raw 2-BC Spectrogram", paste("Single Simulation; B =",B), "Frequency", "Time",
+         # cex.factor = 1.25, yline = 2.75) # Single
+         cex.factor = 1.5, yline = 2.5) # Double H
+    abline(h = range(tb), col = "magenta")
+    par(oma = c(0,0,0,0))
+    image.plot(legend.only = TRUE, legend.lab = "Power", zlim = 0:1,
+               # legend.line = 0.5, legend.cex = 1.2, # Single
+               legend.line = 1, legend.cex = 1.2, # Double H
+               smallplot   = leggo$double.h)
+
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+
+
+
+# Stationary
+
+```{r}
+myf.full <- pbapply(trial$cbc, 3, colMeans)
+myf <- rowMeans(myf.full)
+```
+
+```{r}
+png(filename = paste0("Plots/yf_",my.type,"_B",B,"_",cc,".png"),
+width = 7, height = 4, units = "in", res = 200, pointsize = 10)
+# ---------------------------------------------------------------------------------
+# Prep 1
+par(mar = c(4,3.6,4,0))
+
+    lim <- range((tru$yf)/1e2, yf.mtm, myf)
+    
+    # --- True sy
+    splot(Fs, (tru$yf)/1e2, type = "l", ylim = lim, labs = 0, lwd = 2)
+    
+    # --- MTM
+    sadd(Fs, yf.mtm, col = skastel$green, type = "l", lwd =2)
+    
+    # --- Colmeans
+    sadd(Fs, myf, col = skaturate$yellow, type = "l", lwd =2)
+# ---------------------------------------------------------------------------------
+dev.off()
+```
+
+
+
+
+```{r}
+samp <- 96
+
+# Choose realizations, get corresponding yf
+cbc.samp <- trial$cbc[,,samp]
+myf.samp  <- myf.full[,samp]
+```
+
+
+```{r}
+png(filename = paste0("FinalPlots/yf_",my.type,"_B",B,".png"),
+width = 7, height = 4, units = "in", res = 200, pointsize = 10)
+# ---------------------------------------------------------------------------------
+# Prep 1
+par(mar = c(4,3.6,4,0))
+
+    lim <- range((tru$yf)/1e2, yf.mtm, myf.samp)
+    
+    # --- True sy
+    splot(Fs, (tru$yf)/1e2, type = "l", ylim = lim, labs = 0, lwd = 2)
+    
+    # --- MTM
+    sadd(Fs, yf.mtm, col = skastel$purple, type = "l", lwd =1)
+    
+    # --- Colmeans
+    sadd(Fs, myf, col = skaturate$yellow, type = "l", lwd =2)
+    
+    # Labels
+    slab(bquote(bold("Estimates of stationary"~S[X]*"(f)")),
+         bquote("AR-2; SINGLE Simulation"), 
+         "Frequency", bquote("Spectrum"~S[X]*"(f)"), yline = 2.5)
+    legend("topright",
+       legend = c(bquote(S[X]*"(f)"),
+                  "multitaper",
+                  "2-BC colMeans"),
+          col = c(skrown$B2, skastel$purple, skaturate$yellow),
+          lwd = c(2,1,2), inset = 0.01*1:2, y.intersp = 1.25, cex = 1.1)
+    
+    # ---------------------------------------------------------------------------------
+dev.off()
+```
+
+# Data Tapers [CODE INCLUDED]
+
+```{r}
+swindow <- function(N, win = "boxcar", pad = 0, W = 4){
+  # Determine window function
+  if(win == "boxcar"){          Taper <- rep(sqrt(1/N),N)
+  } else if(win == "hanning"){  Taper <- (1 - cos((1/N)*2*pi*(1:N)))/2
+  } else if(win == "slepian"){  Taper <- dpss(N,2*W, nw = W)$v[,1]  } 
+  
+  # Normalize: Sum of Squares = 2
+  Taper <- Taper / sqrt(sum(Taper^2))
+  
+  # Apply zero-pad if desired
+  if(pad != 0){  D <- (Mod(fft(c(Taper, rep(0,pad-N))))^2)#[1:(pad/2+1)]
+                 D <- c(D[-(1:(pad/2))],D[1:(pad/2)])     # <-- CENTER
+  } else {       D <- (Mod(fft(Taper))^2)[1:(N/2+1)]  }
+  
+  # Center
+  
+}
+
+# Determine pad
+n  <- 50
+P  <- 2^(ceiling(log(n,2)+4)) # +4
+Fp <- seq(-0.5,0.5,length.out = P)#(1/(2*n))*0:(P-1)
+ax <- seq(-0.5,0.5, length.out = 5)
+
+# Generate
+Box  <- swindow(n, "boxcar" , pad = P)
+Han  <- swindow(n, "hanning", pad = P)
+Slep <- swindow(n, "slepian", pad = P) 
+```
+
+```{r}
+png(filename = paste0("FinalPlots/windows2.png"),
+width = 12, height = 6*0.8, units = "in", res = 200, pointsize = 12)
+par(mfrow = c(1,2), mar = c(4,5.5,3,0))
+   
+
+  # --- Plot windows & Indicate bandwidths
+  splot(Fp, Box, type = "l", col = skaturate$yellow,
+        labs = 0, log = 'y', ylim = c(1e-11,1e2), xaxt = 'n', skor = FALSE)
+    axis(1,0,at = ax, labels = ax, tick = TRUE)
+    abline(v = c(-1,1)*(1/n), lty = 3, col = "darkgoldenrod3")
+  slab("Boxcar Window", "(Used in Periodogram)", "Frequency", "Spectral Window", yline = 3.5)
+  
+  # splot(Fp, Han, type = "l", col = skaturate$blue,
+  #       labs = 0, log = 'y', ylim = c(1e-11,1e2), xaxt = 'n', skor = FALSE)
+  #   axis(1,0,at = ax, labels = ax, tick = TRUE)
+  #   abline(v = c(-1,1)*(2/n), lty = 3, col = "blue3")
+  # slab("Hanning Window", "(Option used for some Direct Spectral Estimates)",
+  #      "Frequency", "Spectral Window", yline = 3.5)
+  
+  splot(Fp, Slep, type = "l", col = skaturate$red,
+        labs = 0, log = 'y', ylim = c(1e-11,1e2), xaxt = 'n', skor = FALSE)
+    axis(1,0,at = ax, labels = ax, tick = TRUE)
+    abline(v = c(-1,1)*(4/n), lty = 3, col = "red3")
+  slab("Zeroth order Slepian Window", "(Used to optimize a Direct Spectral Estimate)", "Frequency", "Spectral Window", yline = 3.5)
+
+  
+dev.off()
+```
+
+
+
+
+# Space
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Space
+
+
+
+
