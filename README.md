@@ -17,8 +17,8 @@
 
 #### August A
 
-how do we estimate k? /
-use SVD? /
+how do we estimate k? \
+use SVD? \
 do ys need to be stationary?
 
 * B\&D undergrad
