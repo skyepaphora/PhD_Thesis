@@ -20,7 +20,6 @@
 * how do we estimate k?
 * use SVD?
 * do ys need to be stationary?
-
 * B\&D undergrad
 * chatfield
 * 361 (lin) is the prerec
@@ -38,9 +37,8 @@
 * online 10min lecture supplements
 * make sure office hours are on the same day as a teaching day
 * you have to leave research days where you turn off email
-
-
 * don't hear from Jeannane? Bug her again
+
 ---
 
 
