@@ -43,16 +43,16 @@ leggo <- list(single = c(0.925 ,0.95 ,0.1 ,0.925),
               triple.h = c(0.85 ,0.9 ,0.15,0.875))
 
 ## --- Normalizing function
-kable(data.frame(range(tru$xtf),range(pbc$bc1$mean),range(pbc$bc2$mean)), format = "pipe")
+kable(data.frame(range(info$tru$xtf),range(pbc$bc1$mean),range(pbc$bc2$mean)), format = "pipe")
 
 normy <- function(x){x*1e2*(x>=0)}  # AR, UMP
 # normy <- function(x){x*(x>=0)}    # other (non-stationary AR)
 
 ## --- Common z-axis limits
 # zlim <- c(0,max(normy(pbc$bc1$mean),normy(pbc$bc2$mean),tru$xtf))
-zlim <- c(range(normy(pbc$bc1$mean),normy(pbc$bc2$mean),tru$xtf)) 
+zlim <- c(range(normy(pbc$bc1$mean),normy(pbc$bc2$mean),normy(info$tru$xtf))) 
 
-# tix <- round(seq(0,zlim[2],length.out=7))         # legend ticks [0,max]
+# tix <- round(seq(0,zlim[2],length.out=7))       # legend ticks [0,max]
 tix <- round(seq(zlim[1],zlim[2],length.out=7))   # legend ticks [range]
 ```
 
@@ -67,40 +67,44 @@ par(mfrow = c(1,3), mar = c(4,0,3.5,1), oma = c(0,4,0,5.6))
 # ---------------------------------------------------------------------------------
 
   ## --- TRUE
-  image(x = Fs, y = t, z = t((tru$xtf)),
+  image(x = Fs, y = t, z = t(normy(info$tru$xtf)),
         xlab = "", ylab = "", zlim = zlim,
         las = 1, col = tim.colors()); sox()
   abline(h = range(tb), col = skrown$salt, lty = 2)
   slab(
        # "Example A   [AR(2)]",
-       "Example B   [UMP]",
+       # "Example B   [UMP]",
        # "Example C   [UMP]",
        # "Example D [Non-Stationary]",
-       bquote("True"~"Time-Frequency Spectrum"),"Frequency","Time", yline = 2.5, mline = 2, cex.factor = 0.9)
+       "Example E [GUMP-2]",
+       bquote("True"~"Time-Frequency Spectrum"),
+       "Frequency","Time", yline = 2.5, mline = 2, cex.factor = 0.9)
 
   ## --- 1-BC
-  image(x = Fs, y = t, z = t(normy(pbc$bc1$mean)),
-        xlab = "", ylab = "", zlim = zlim,
+  image(x = Fs, y = t, z = normy(pbc$bc1$mean),
+        xlab = "", ylab = "",# zlim = zlim,
         las = 1, yaxt = 'n', col = tim.colors()); sox()
   abline(h = range(tb), col = skrown$salt, lty = 2)
   slab(
        # "1-BC: Example A",
-       "1-BC: Example B",
+       # "1-BC: Example B",
        # "1-BC: Example C",
        # "1-BC: Example D",
+       "Example E [GUMP-2]",
        bquote("Average over M ="~.(M)~"simulations;"~bold("B =")~bold(.(as.character(B))) ),
        "Frequency","", mline = 2, cex.factor = 0.9)
 
   ## --- 2-BC
-  image(x = Fs, y = t, z = t(normy(pbc$bc2$mean)),
-        xlab = "", ylab = "", zlim = zlim,
+  image(x = Fs, y = t, z = normy(pbc$bc2$mean),
+        xlab = "", ylab = "",# zlim = zlim,
         las = 1, yaxt = 'n', col = tim.colors()); sox()
   abline(h = range(tb), col = skrown$salt, lty = 2)
   slab(
        # "2-BC: Example A",
-       "2-BC: Example B",
+       # "2-BC: Example B",
        # "2-BC: Example C",
        # "2-BC: Example D",
+       "Example E [GUMP-2]",
        bquote("Average over M ="~.(M)~"simulations;"~bold("B =")~bold(.(as.character(B))) ),
        "Frequency","", mline = 2, cex.factor = 0.9)
   

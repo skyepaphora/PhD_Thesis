@@ -14,6 +14,33 @@
 * walked through different algorithms, we've only been discussing SOBI so far
 * Looked at how to choose a set of lags $\{k\}$ for SOBI
 
+
+#### August A
+
+* how do we estimate k?
+* use SVD?
+* do ys need to be stationary?
+
+* B\&D undergrad
+* chatfield
+* 361 (lin) is the prerec
+* gonna have to manually show covariance
+* glen doesn't have them do any spectrum, he just breaks down, talks high level
+* decomp into sin/cos is like taylor series
+* syllabus - update from Glens' - DO THIS FIRST
+    - "up to X assignments"
+* need to make OnQ page
+* make crowdmark page
+* ask about TA support
+* Solus has the classlist, that's where you input grades too
+* peoplesoft
+* workshops during lecture hours
+* online 10min lecture supplements
+* make sure office hours are on the same day as a teaching day
+* you have to leave research days where you turn off email
+
+
+* don't hear from Jeannane? Bug her again
 ---
 
 
@@ -194,7 +221,6 @@ First, go through BSS section of readme to clarify meeting notes and goals
 1. Review BSS framework
 2. Familiarize myself with how this framework relates to (G)UMPs.
 3. Find a way to code the algorithm in R, ideally using established packages
-
 
 
 

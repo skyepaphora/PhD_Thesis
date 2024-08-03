@@ -1,0 +1,126 @@
+# Tasks
+
+* have B-dependent variables output by p-BC rather than pre-determined
+    - update this for plotters
+* generalize: input series directly into function
+    - actually for sims don't do this unless you put the loop outside the function
+* get rid of t() where possible
+
+---
+
+# The great transposition of 2024
+
+```{r}
+# --- symmetry checking function
+sym <- function(x){
+  return(x == t(x))
+}
+```
+
+| Variable  | Original Dim      | New Dim           | Details                       |
+|:----------|:------------------|:------------------|:------------------------------|
+| v         | N x K             | K x N             | Size N slepians, prelims      |
+| vb        | B x K             | K x B             | Size B slepians, function     |
+| (st)      | N x length(freqs) | length(freqs) x N | Matrix of signals             |
+| mat       | B x B             | B x B             | Funky kernel **SYMMETRIC!**   |
+| mvec      | B x B             | B x B             | eigenvecs of mat (NOT SYM)    |
+| a (func)  | out = 1 x NF      | NFx 1?            | expansion coef output         |
+|           | in = 20*NF x N-B+1| rev?              | input: SWHRS                  |
+
+
+
+```{r}
+z <- matrix(sw2[,1], nrow = NF)
+```
+
+
+```{r}
+oingo  <- (K/(mval[1]*w0.0)) * t(sapply(b, function(p){mvec[,1] %*% matrix(sw [,p], ncol = NF)}))
+boingo <- (K/(mval[1]*w0.0)) * t(sapply(b, function(p){matrix(sw2[,p], nrow = NF) %*% mvec[,1]}))
+
+bingo  <- (K/(mval[1]*w0.0)) * sapply(b, function(p){mvec[,1] %*% matrix(sw [,p], ncol = NF)})
+bongo  <- (K/(mval[1]*w0.0)) * sapply(b, function(p){matrix(sw2[,p], nrow = NF) %*% mvec[,1]})
+
+    # Initialize arrays
+    bc1 <- array(dim = c(NF,N,M))
+
+bc1[,tb,1] <- bongo 
+
+    # Endpoints: 1st derivative
+    tds.start  <- tds(sw2,1)
+    tds.end    <- tds(sw2,max(b)) 
+
+    # Extrapolate
+      bc1[,1:(tb[1]-1),m]   <- sapply((tb[1]-1):1, 
+                                        function(h){ bc1[,tb[1],m] - h*tds.start })
+      bc1[,(max(tb)+1):N,m] <- sapply(1:(B2-(B2 != B/2)), 
+                                        function(h){ bc1[,max(tb),m] + h*tds.end })
+
+
+
+z  <- sapply((tb[1]-1):1, function(h){ bc1[,tb[1],m] - h*tds.start })
+zz <- sapply(1:(B2-(B2 != B/2)), function(h){ bc1[,max(tb),m] + h*tds.end })
+
+image.plot(bc1[,1:(tb[1]-1),1])
+plot(colSums(bc1[,,1]))
+```
+
+---
+
+```{r}
+oingo <- matrix(1:4,ncol=1)
+boingo <- crossprod(1:4)
+
+t(oingo) %*% oingo
+oingo %*% t(oingo)
+
+ crossprod(oingo,oingo)
+tcrossprod(oingo,oingo)
+```
+
+---
+
+plots that worked
+
+```{r}
+image.plot(pbc$bc1$mean, main = "new")
+image.plot(pbc$bc2$mean, main = "new")
+image.plot(info$tru$xtf + info$tru$xtf2, main = "tru")
+image.plot(info$tru$xtf, main = "tru")
+type == GUMP
+type = "GUMP"
+yf.true  <- if(type != "noise"){AR2.spec(ar2)  } else {NULL}
+yf2.true  <- if(type == "GUMP"){AR2.spec(ar2.2)} else {NULL}
+xtf.true  <- if(type == "AR2"    ){ ytf.true
+} else if(type == "UMP"    ){ outer(ct^2,  yf.true)
+} else if(type == "GUMP"   ){ outer(ct1^2, yf.true) + outer(ct2^2, yf2.true)
+} else if(type == "AR2_non"){
+1e2/(Mod(1 - (a.12)%*%exp(-i*2*pi*Fs) - psi.2%*%exp(-i*2*pi*Fs*2))^2)
+}
+image.plot(xtf.true)
+xtf.true  <- if(type == "AR2"    ){ ytf.true
+} else if(type == "UMP"    ){ outer(ct^2,  yf.true)
+} else if(type == "GUMP"   ){ outer(yf.true, ct1^2) + outer(yf2.true, ct2^2)
+} else if(type == "AR2_non"){
+1e2/(Mod(1 - (a.12)%*%exp(-i*2*pi*Fs) - psi.2%*%exp(-i*2*pi*Fs*2))^2)
+}
+image.plot(xtf.true)
+image.plot(pbc$bc1$mean, main = "new")
+```
+
+
+```{r}
+par(bg = "red4")
+
+my.cols <- 400:409
+
+jj <- tcrossprod(coef(SOBI(pbc$bc1$mean[,my.cols])),pbc$bc1$mean[,my.cols])
+
+kk <- ts(t(jj))
+plot(kk, main = paste(min(my.cols),":", max(my.cols)))
+```
+
+```{r}
+# animation::
+```
+

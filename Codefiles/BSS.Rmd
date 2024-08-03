@@ -209,8 +209,18 @@ Thus we can use the sum of limiting variances approach (available through BSSasy
 
 
 
+```{r}
+nss.1 <- tcrossprod(coef(nss.td.jd),X.t)
+
+nss_s.t <- ts(t(nss.1), start = 0, frequency = 8000)
+```
 
 
+```{r}
+plot(nss_s.t)
+plot(S.t)
+plot(X.t)
+```
 
 
 

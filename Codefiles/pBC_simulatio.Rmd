@@ -37,17 +37,27 @@ psi.2 <- t(t(0.1*sin(2*pi*(0.001)*t)))
 a.12  <- t(t(psi.1*(1 - psi.2)))
 
 ## --- Function: true spectral density of an AR(2) series (sd = 10 is fixed)
-ar2 = c(0.5,-0.5)
-ar2.2 = c(0.7,-0.3)
+ar2 = c(0.1,-0.7)
+ar2.2 = c(0.5,-0.5)
 AR2.spec <- function(phi = c(0,0)){ (10^2)/Mod( 1 - phi[1]*exp(-i*2*pi*Fs) - phi[2]*(exp(-i*4*pi*Fs)))^2 }
+```
+
+```{r}
+# B-dependent Prelims
+B  <- 150
+B2 <- ceiling(B/2)                                  # Midpoint shift
+b  <- 1:(N-(B-1))                                   # block indices
+tb <- b + B2 - 1                                    # time in-block
+vb <- t(spec.mtm(ts(1:B), plot = FALSE)$mtm$dpss$v) # DPSS (based on B)
+BS <- list(B = B, B2 = B2, b = b, tb = tb, vb = vb) # store for output
 ```
 
 ## prep functions
 
 ```{r model}
 ## --------- Choose Model --------- ##
-my.type = "GUMP"
-sd = 10
+my.type <- "GUMP"
+sd <- 10
 
 if(my.type == "noise"){
     get <- function(){ 
@@ -82,7 +92,7 @@ if(my.type == "noise"){
 ```{r}
 p.bc <- function(p = 1:2, type = "noise", B = 100, M = 100, seed = 0, sd = 10,
                 ct = rep(1,N),      ct2 = rep(1,N), 
-               ar2 = c(0.5,-0.5), ar2.2 = c(0.7,-0.3),
+               ar2 = c(0.1,-0.7), ar2.2 = c(0.5,-0.5),
               freq = NULL){
   
         
@@ -217,14 +227,15 @@ p.bc <- function(p = 1:2, type = "noise", B = 100, M = 100, seed = 0, sd = 10,
   
   xtf.true  <- if(type == "AR2"    ){ ytf.true
         } else if(type == "UMP"    ){ outer(ct^2,  yf.true)
-        } else if(type == "GUMP"   ){ outer(yf.true, ct1^2) + outer(yf2.true, ct2^2)
+        } else if(type == "GUMP"   ){ outer(ct1^2, yf.true) + outer(ct2^2, yf2.true)
         } else if(type == "AR2_non"){
             1e2/(Mod(1 - (a.12)%*%exp(-i*2*pi*Fs) - psi.2%*%exp(-i*2*pi*Fs*2))^2)
         }
+  xtf1.true <- if(type == "GUMP"){outer(ct1^2,  yf.true)} else {NULL}
   xtf2.true <- if(type == "GUMP"){outer(ct2^2, yf2.true)} else {NULL}
   
   # Save true vals
-  tru <- list( yf.true, ytf.true, yf2.true, ytf2.true, xtf.true, xtf2.true)
+  tru <- list( yf.true, ytf.true, yf2.true, ytf2.true, xtf.true, xtf1.true, xtf2.true)
   names(tru) <- c("yf",    "ytf",    "yf2",    "ytf2",    "xtf",    "xtf2")
   
   # output
@@ -239,8 +250,8 @@ p.bc <- function(p = 1:2, type = "noise", B = 100, M = 100, seed = 0, sd = 10,
 ## Simulate
 
 ```{r}
-# trial <- p.bc(p = 1:2, type = my.type, M = M, B = B, seed = 68, ct = ct); gc()
-trial <- p.bc(p = 1:2, type = my.type, M = 10, B = 50, seed = 68, ct = ct); gc()
+trial <- p.bc(p = 1:2, type = my.type, M = M, B = B, seed = 68, ct = ct); gc()
+# trial <- p.bc(p = 1:2, type = my.type, M = 10, B = 50, seed = 68, ct = ct); gc()
 ```
 
 ```{r}
