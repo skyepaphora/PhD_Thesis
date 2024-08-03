@@ -17,9 +17,10 @@
 
 #### August A
 
-* how do we estimate k?
-* use SVD?
-* do ys need to be stationary?
+how do we estimate k? /
+use SVD? /
+do ys need to be stationary?
+
 * B\&D undergrad
 * chatfield
 * 361 (lin) is the prerec
