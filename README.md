@@ -15,7 +15,7 @@
 * Looked at how to choose a set of lags $\{k\}$ for SOBI
 
 
-#### August A
+## August A
 
 how do we estimate k? \
 use SVD? \
@@ -42,7 +42,15 @@ do ys need to be stationary?
 
 ---
 
+## August B
 
+#### Skye (464)
+
+#### Skye (Research)
+
+#### Skye (Pro-D)
+
+---
 
 # Research Meeting Notes
 
