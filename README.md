@@ -17,10 +17,12 @@
 
 ## August A
 
+#### Research
 how do we estimate k? \
 use SVD? \
 do ys need to be stationary?
 
+#### 464
 * B\&D undergrad
 * chatfield
 * 361 (lin) is the prerec
@@ -44,11 +46,11 @@ do ys need to be stationary?
 
 ## August B
 
-#### Skye (464)
+#### 464
 
-#### Skye (Research)
+#### Research
 
-#### Skye (Pro-D)
+#### Pro-D
 
 ---
 
